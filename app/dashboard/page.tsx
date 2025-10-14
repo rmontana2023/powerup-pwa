@@ -143,6 +143,10 @@ export default function DashboardPage() {
     setQrOpen(true);
     setRedeemTimer(30);
   };
+  const handleLogout = async () => {
+    await fetch("/api/auth/logout", { method: "POST" });
+    router.push("/login");
+  };
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-orange-50 to-white flex flex-col items-center px-4 py-6 relative">
@@ -260,6 +264,36 @@ export default function DashboardPage() {
           </div>
         </div>
       )}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+      {/* Sidebar Drawer (Left side with smooth animation) */}
+      <div
+        className={`fixed top-0 right-0 h-full w-64 bg-white shadow-lg z-50 transform transition-transform duration-300 ${
+          sidebarOpen ? "translate-x-0" : "translate-x-full"
+        }`}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between p-4 border-b">
+          <p className="font-semibold text-gray-800">Settings</p>
+          <button onClick={() => setSidebarOpen(false)}>
+            <X className="w-5 h-5 text-gray-600" />
+          </button>
+        </div>
+
+        {/* Body */}
+        <div className="p-4 space-y-4">
+          <button
+            onClick={handleLogout}
+            className="w-full bg-orange-500 hover:bg-orange-600 text-white px-6 py-2 rounded-lg transition-all"
+          >
+            Logout
+          </button>
+        </div>
+      </div>
 
       {/* Bottom Navigation */}
       <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg z-40">

@@ -125,7 +125,7 @@ export default function RegisterPage() {
             />
 
             {/* 👇 Account Type Selector */}
-            <select
+            {/* <select
               value={form.accountType}
               onChange={(e) => setForm({ ...form, accountType: e.target.value })}
               className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
@@ -133,7 +133,7 @@ export default function RegisterPage() {
             >
               <option value="ordinary">Ordinary Account</option>
               <option value="fleet">Fleet Account</option>
-            </select>
+            </select> */}
 
             <input
               type="password"
