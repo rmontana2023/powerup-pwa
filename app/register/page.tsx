@@ -16,81 +16,101 @@ export default function RegisterPage() {
   const [otpMode, setOtpMode] = useState(false);
   const [otp, setOtp] = useState("");
   const [userId, setUserId] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [successMsg, setSuccessMsg] = useState("");
 
+  // 🟠 STEP 1: REGISTER USER
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    setSuccessMsg("");
+    setLoading(true);
 
-    // ✅ Frontend Validation
-    if (!form.name || !form.email || !form.password) {
-      setError("Name, email, and password are required.");
-      return;
+    try {
+      // ✅ Frontend Validation
+      if (!form.name || !form.email || !form.password) {
+        throw new Error("Name, email, and password are required.");
+      }
+
+      if (!/\S+@\S+\.\S+/.test(form.email)) {
+        throw new Error("Please enter a valid email address.");
+      }
+
+      if (form.password.length < 6) {
+        throw new Error("Password must be at least 6 characters.");
+      }
+
+      const res = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
+
+      const data = await res.json();
+      console.log("🚀 ~ handleRegister ~ data:", data);
+      if (!res.ok) throw new Error(data.error || "Registration failed");
+
+      // ✅ Show OTP screen
+      setUserId(data.userId);
+      setOtpMode(true);
+      setSuccessMsg("We’ve sent a 6-digit OTP to your email. Please check your inbox.");
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
     }
-
-    if (!/\S+@\S+\.\S+/.test(form.email)) {
-      setError("Please enter a valid email address.");
-      return;
-    }
-
-    if (form.password.length < 6) {
-      setError("Password must be at least 6 characters.");
-      return;
-    }
-
-    if (!["ordinary", "fleet"].includes(form.accountType)) {
-      setError("Invalid account type selected.");
-      return;
-    }
-
-    const res = await fetch("/api/auth/register", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(form),
-    });
-
-    const data = await res.json();
-    if (!res.ok) {
-      setError(data.error || "Registration failed");
-      return;
-    }
-    setUserId(data.userId);
-    setOtpMode(true); // 👉 switch to OTP screen
-    // localStorage.setItem("token", data.token);
-    // localStorage.setItem("user", JSON.stringify(data.user));
-    // window.location.href = "/dashboard";
   };
+
+  // 🟢 STEP 2: VERIFY OTP
   const handleVerifyOtp = async (e: React.FormEvent) => {
     e.preventDefault();
-    const res = await fetch("/api/auth/verify-otp", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userId, otp }),
-    });
+    setError("");
+    setSuccessMsg("");
+    setLoading(true);
 
-    const data = await res.json();
-    if (!res.ok) {
-      setError(data.error);
-      return;
+    try {
+      const res = await fetch("/api/auth/verify-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId, otp }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Invalid OTP");
+
+      // ✅ Verification success
+      setSuccessMsg("✅ OTP verified successfully!");
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("user", JSON.stringify(data.user));
+      window.location.href = "/dashboard";
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
     }
-
-    localStorage.setItem("token", data.token);
-    localStorage.setItem("user", JSON.stringify(data.user));
-    window.location.href = "/dashboard";
   };
+
   return (
     <main className="flex items-center justify-center min-h-screen bg-white">
       <div className="bg-white rounded-2xl w-full max-w-md p-8 animate-fadeIn">
         {/* Logo */}
         <div className="flex flex-col items-center mb-8">
           <Image src={logo2} alt="PowerUp Rewards" width={250} height={80} priority />
-          <h1 className="mt-4 text-2xl font-bold text-gray-800">Create Your Account</h1>
-          <p className="text-gray-500 text-sm">Join the PowerUp family today</p>
+          <h1 className="mt-4 text-2xl font-bold text-gray-800">
+            {otpMode ? "Verify Your Email" : "Create Your Account"}
+          </h1>
+          <p className="text-gray-500 text-sm">
+            {otpMode
+              ? "Enter the OTP we sent to your email address."
+              : "Join the PowerUp family today"}
+          </p>
         </div>
 
-        {/* Error */}
+        {/* Alerts */}
         {error && <p className="text-red-500 text-sm mb-4 text-center">{error}</p>}
+        {successMsg && <p className="text-green-600 text-sm mb-4 text-center">{successMsg}</p>}
 
-        {/* Form */}
+        {/* Registration Form */}
         {!otpMode ? (
           <form className="space-y-4" onSubmit={handleRegister}>
             <input
@@ -123,18 +143,6 @@ export default function RegisterPage() {
               onChange={(e) => setForm({ ...form, address: e.target.value })}
               className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
             />
-
-            {/* 👇 Account Type Selector */}
-            {/* <select
-              value={form.accountType}
-              onChange={(e) => setForm({ ...form, accountType: e.target.value })}
-              className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
-              required
-            >
-              <option value="ordinary">Ordinary Account</option>
-              <option value="fleet">Fleet Account</option>
-            </select> */}
-
             <input
               type="password"
               placeholder="Password"
@@ -145,26 +153,42 @@ export default function RegisterPage() {
             />
             <button
               type="submit"
-              className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold p-3 rounded-lg transition-all"
+              disabled={loading}
+              className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold p-3 rounded-lg transition-all disabled:opacity-50"
             >
-              Register
+              {loading ? "Creating Account..." : "Register"}
             </button>
           </form>
         ) : (
-          <form onSubmit={handleVerifyOtp}>
-            <h2 className="text-lg font-semibold mb-4">Enter the OTP sent to your email</h2>
+          // OTP Verification Form
+          <form onSubmit={handleVerifyOtp} className="space-y-4">
             <input
               type="text"
-              placeholder="6-digit OTP"
+              placeholder="Enter 6-digit OTP"
               value={otp}
               onChange={(e) => setOtp(e.target.value)}
-              className="w-full p-3 border rounded-lg mb-4"
+              className="w-full p-3 border border-gray-300 rounded-lg text-center tracking-widest text-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+              maxLength={6}
+              required
             />
-            <button type="submit" className="w-full bg-orange-500 text-white py-3 rounded-lg">
-              Verify OTP
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold p-3 rounded-lg transition-all disabled:opacity-50"
+            >
+              {loading ? "Verifying..." : "Verify OTP"}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setOtpMode(false)}
+              className="block w-full text-sm text-gray-500 mt-2 hover:underline"
+            >
+              ⬅ Back to Registration
             </button>
           </form>
         )}
+
         {/* Footer */}
         <div className="mt-6 text-center text-sm text-gray-600">
           Already have an account?{" "}

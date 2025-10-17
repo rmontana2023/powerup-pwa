@@ -1,16 +1,54 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { List, Home, Gift, User, QrCode } from "lucide-react";
 import Image from "next/image";
 import logo2 from "../../public/assets/logo/powerup-logo-2.png";
-
+import LayoutWithNav from "../components/LayoutWithNav";
 export default function TransactionsPage() {
+  const [user, setUser] = useState<any>(null);
   const router = useRouter();
   const [transactions, setTransactions] = useState<any[]>([]);
   const [redemptions, setRedemptions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-
+  const [voucher, setVoucher] = useState<any | null>(null);
+  const [qrOpen, setQrOpen] = useState(false);
+  const [redeemTimer, setRedeemTimer] = useState(30);
+  const redeemTimerRef = useRef<NodeJS.Timeout | null>(null);
+  useEffect(() => {
+    async function fetchUser() {
+      const res = await fetch("/api/auth/me");
+      if (!res.ok) {
+        router.push("/login");
+        return;
+      }
+      const data = await res.json();
+      setUser(data.user);
+      setLoading(false);
+    }
+    fetchUser();
+  }, [router]);
+  useEffect(() => {
+    if (qrOpen) {
+      setRedeemTimer(30);
+      redeemTimerRef.current = setInterval(() => {
+        setRedeemTimer((prev) => {
+          if (prev <= 1) {
+            clearInterval(redeemTimerRef.current!);
+            setQrOpen(false);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    } else {
+      if (redeemTimerRef.current) clearInterval(redeemTimerRef.current);
+      setRedeemTimer(30);
+    }
+    return () => {
+      if (redeemTimerRef.current) clearInterval(redeemTimerRef.current);
+    };
+  }, [qrOpen]);
   useEffect(() => {
     async function fetchData() {
       try {
@@ -64,96 +102,70 @@ export default function TransactionsPage() {
   ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
   if (loading) return <p className="text-center mt-10">Loading...</p>;
-
+  const openNavQR = () => {
+    console.log("🚀 ~ openNavQR ~ user:", user);
+    setVoucher({
+      code: user.qrCode, // or `${user._id}:${user.name}` for example
+      amount: 0,
+      expiresAt: new Date(Date.now() + 30 * 1000),
+    });
+    setQrOpen(true);
+    setRedeemTimer(30);
+  };
   return (
-    <main className="min-h-screen bg-gradient-to-b from-orange-50 to-white flex flex-col items-center px-4 py-6 pb-24">
-      {/* Header */}
-      <div className="w-full max-w-md flex justify-center items-center mb-6">
-        <Image src={logo2} alt="PowerUp Rewards" width={150} height={50} priority />
-      </div>
-
-      <div className="w-full max-w-md bg-white/70 backdrop-blur-lg border border-orange-100 rounded-3xl shadow-lg p-5 mb-5">
-        <h2 className="text-lg font-bold text-gray-800 mb-4">Transaction History</h2>
-
-        {combined.length === 0 ? (
-          <p className="text-center text-gray-500 text-sm">No transactions yet.</p>
-        ) : (
-          <div className="space-y-3 max-h-[65vh] overflow-y-auto">
-            {combined.map((item) => (
-              <div
-                key={item._id}
-                className={`flex justify-between items-center p-3 rounded-xl shadow-sm border ${
-                  item.type === "Transaction"
-                    ? "border-orange-100 bg-orange-50"
-                    : "border-gray-200 bg-gray-50"
-                }`}
-              >
-                <div className="flex flex-col">
-                  <span
-                    className={`text-sm font-semibold ${
-                      item.type === "Transaction" ? "text-orange-600" : "text-gray-700"
-                    }`}
-                  >
-                    {item.type}
-                  </span>
-                  <span className="text-xs text-gray-600">{item.details}</span>
-                  <span className="text-[11px] text-gray-500">
-                    {new Date(item.date).toLocaleString()}
-                  </span>
-                </div>
-                <div className="text-right">
-                  <span
-                    className={`block text-sm font-bold ${
-                      item.type === "Transaction" ? "text-green-600" : "text-red-500"
-                    }`}
-                  >
-                    {item.points}
-                  </span>
-                  <span className="text-[11px] text-gray-500">{item.station}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Bottom Navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg z-40">
-        <div className="flex justify-around items-center relative h-16">
-          <div className="flex space-x-6">
-            <NavItem
-              label="Home"
-              icon={<Home className="w-6 h-6" />}
-              onClick={() => router.push("/dashboard")}
-            />
-            <NavItem
-              label="Transactions"
-              icon={<List className="w-6 h-6 text-orange-500" />}
-              onClick={() => router.push("/transactions")}
-            />
-          </div>
-          <button
-            onClick={() => router.push("/dashboard?showQr=true")}
-            className="absolute -top-6 left-1/2 -translate-x-1/2 bg-orange-500 text-white rounded-full w-14 h-14 flex items-center justify-center shadow-lg hover:bg-orange-600 transition"
-          >
-            <QrCode className="w-7 h-7" />
-          </button>
-
-          <div className="flex space-x-6">
-            <NavItem
-              label="Rewards"
-              icon={<Gift className="w-6 h-6" />}
-              onClick={() => router.push("/rewards")}
-            />
-            <NavItem
-              label="Account"
-              icon={<User className="w-6 h-6" />}
-              onClick={() => router.push("/account")}
-            />
-          </div>
+    <LayoutWithNav openNavQR={openNavQR}>
+      <main className="min-h-screen bg-gradient-to-b from-orange-50 to-white flex flex-col items-center px-4 py-6 pb-24">
+        {/* Header */}
+        <div className="w-full max-w-md flex justify-center items-center mb-6">
+          <Image src={logo2} alt="PowerUp Rewards" width={150} height={50} priority />
         </div>
-      </nav>
-    </main>
+
+        <div className="w-full max-w-md bg-white/70 backdrop-blur-lg border border-orange-100 rounded-3xl shadow-lg p-5 mb-5">
+          <h2 className="text-lg font-bold text-gray-800 mb-4">Transaction History</h2>
+
+          {combined.length === 0 ? (
+            <p className="text-center text-gray-500 text-sm">No transactions yet.</p>
+          ) : (
+            <div className="space-y-3 max-h-[65vh] overflow-y-auto">
+              {combined.map((item) => (
+                <div
+                  key={item._id}
+                  className={`flex justify-between items-center p-3 rounded-xl shadow-sm border ${
+                    item.type === "Transaction"
+                      ? "border-orange-100 bg-orange-50"
+                      : "border-gray-200 bg-gray-50"
+                  }`}
+                >
+                  <div className="flex flex-col">
+                    <span
+                      className={`text-sm font-semibold ${
+                        item.type === "Transaction" ? "text-orange-600" : "text-gray-700"
+                      }`}
+                    >
+                      {item.type}
+                    </span>
+                    <span className="text-xs text-gray-600">{item.details}</span>
+                    <span className="text-[11px] text-gray-500">
+                      {new Date(item.date).toLocaleString()}
+                    </span>
+                  </div>
+                  <div className="text-right">
+                    <span
+                      className={`block text-sm font-bold ${
+                        item.type === "Transaction" ? "text-green-600" : "text-red-500"
+                      }`}
+                    >
+                      {item.points}
+                    </span>
+                    <span className="text-[11px] text-gray-500">{item.station}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </main>
+    </LayoutWithNav>
   );
 }
 

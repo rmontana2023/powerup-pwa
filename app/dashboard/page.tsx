@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { X, Wallet, Clock, Bike, Truck, Home, List, Gift, User, QrCode } from "lucide-react";
 import Image from "next/image";
 import logo2 from "../../public/assets/logo/powerup-logo-2.png";
+import LayoutWithNav from "../components/LayoutWithNav";
 
 const REWARD_TIERS: Record<string, { points: number; peso: number }[]> = {
   ordinary: [
@@ -137,9 +138,13 @@ export default function DashboardPage() {
       setShowSlideDialog(false);
     }
   };
-
   const openNavQR = () => {
-    // Directly open QR modal from nav
+    console.log("🚀 ~ openNavQR ~ user:", user);
+    setVoucher({
+      code: user.qrCode, // or `${user._id}:${user.name}` for example
+      amount: 0,
+      expiresAt: new Date(Date.now() + 30 * 1000),
+    });
     setQrOpen(true);
     setRedeemTimer(30);
   };
@@ -149,191 +154,126 @@ export default function DashboardPage() {
   };
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-orange-50 to-white flex flex-col items-center px-4 py-6 relative">
-      {/* Header */}
-      <div className="w-full max-w-md flex justify-center items-center mb-6">
-        <Image src={logo2} alt="PowerUp Rewards" width={150} height={50} priority />
-      </div>
-
-      {/* Greeting & Points */}
-      <div className="w-full max-w-md bg-white/70 backdrop-blur-lg border border-orange-100 rounded-3xl shadow-lg p-5 mb-5">
-        <p className="text-xl font-semibold text-gray-800 text-left">
-          Good day, <span className="text-orange-500">{user.name}</span>
-        </p>
-        <div className="flex flex-col items-center mt-2 mb-5">
-          <p className="text-5xl font-extrabold text-orange-500 mt-1 mb-2 tracking-wide">
-            {user.totalPoints}
-          </p>
-          <p className="text-md font-medium text-gray-700">Total Points</p>
-        </div>
-      </div>
-
-      {/* Earn Points */}
-      <div className="w-full max-w-md mt-6 mb-5">
-        <h2 className="text-lg font-bold text-gray-800 mb-4">Earn Points</h2>
-        <div className="grid grid-cols-2 gap-4">
-          <div className="flex flex-col items-center bg-white/80 backdrop-blur-lg border border-orange-100 p-4 rounded-2xl shadow-md">
-            <Bike className="w-10 h-10 text-orange-500 mb-2" />
-            <p className="text-sm font-semibold text-gray-800">Tricycle</p>
-            <p className="text-xs text-gray-500 mt-1">1 liter = 1 point</p>
-          </div>
-          <div className="flex flex-col items-center bg-white/80 backdrop-blur-lg border border-orange-100 p-4 rounded-2xl shadow-md">
-            <Truck className="w-10 h-10 text-orange-500 mb-2" />
-            <p className="text-sm font-semibold text-gray-800">Multicab</p>
-            <p className="text-xs text-gray-500 mt-1">1 liter = 1 point</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Rewards Section */}
-      <div className="w-full max-w-md mb-8">
-        <h2 className="text-lg font-bold text-gray-800 mb-4">Rewards</h2>
-        <div className="bg-white/90 backdrop-blur-lg rounded-3xl shadow-md border border-orange-100 p-5 flex flex-col">
-          {userTiers.map((tier, idx) => (
-            <p
-              key={idx}
-              className={`text-base font-semibold text-gray-800 ${
-                user.totalPoints >= tier.points ? "" : "opacity-50"
-              }`}
-            >
-              {tier.points} Points = ₱{tier.peso.toFixed(2)}
-            </p>
-          ))}
-          <div className="flex justify-end mt-4">
-            <button
-              onClick={handleRedeemClick}
-              className={`bg-orange-500 hover:bg-orange-600 text-white px-6 py-2 rounded-lg transition-all ${
-                !canRedeem ? "opacity-50 cursor-not-allowed" : ""
-              }`}
-              disabled={!canRedeem}
-            >
-              Redeem
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Slide-to-Show QR */}
-      {showSlideDialog && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-2xl p-6 shadow-xl w-80 text-center relative">
-            <X
-              className="absolute top-3 right-3 w-5 h-5 text-gray-500 cursor-pointer"
-              onClick={() => setShowSlideDialog(false)}
-            />
-            <h3 className="text-lg font-semibold text-gray-800 mb-4">Slide to Reveal QR</h3>
-            <div
-              ref={sliderRef}
-              className="relative w-full h-12 bg-gray-200 rounded-full overflow-hidden select-none touch-none"
-              onPointerDown={startDrag}
-              onPointerMove={onDrag}
-              onPointerUp={endDrag}
-              onPointerLeave={endDrag}
-            >
-              <div
-                className="absolute left-0 top-0 h-full bg-orange-500 rounded-full transition-all"
-                style={{ width: `${sliderWidth}%` }}
-              />
-              <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-white font-semibold">
-                Slide to Redeem
-              </span>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {qrOpen && voucher && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-2xl p-6 shadow-xl w-80 text-center relative">
-            <button
-              onClick={() => setQrOpen(false)}
-              className="absolute top-3 right-3 text-gray-500 hover:text-gray-700"
-            >
-              <X className="w-5 h-5" />
-            </button>
-            <h3 className="text-lg font-semibold text-gray-800 mb-4">My e-Voucher</h3>
-            <div className="flex justify-center mb-3">
-              <QRCodeSVG value={voucher.code} size={160} bgColor="#fff" fgColor="#000" />
-            </div>
-            <p className="text-xs text-gray-600 mb-1">Voucher Code: {voucher.code}</p>
-            <p className="text-sm font-medium text-gray-700">Amount: ₱{voucher.amount}</p>
-            <p className="text-xs text-gray-500">
-              Expires: {new Date(voucher.expiresAt).toLocaleDateString()}
-            </p>
-            <p className="text-sm font-medium text-gray-700 mt-2">Expires in: {redeemTimer} sec</p>
-          </div>
-        </div>
-      )}
-      {sidebarOpen && (
-        <div
-          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40"
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
-      {/* Sidebar Drawer (Left side with smooth animation) */}
-      <div
-        className={`fixed top-0 right-0 h-full w-64 bg-white shadow-lg z-50 transform transition-transform duration-300 ${
-          sidebarOpen ? "translate-x-0" : "translate-x-full"
-        }`}
-      >
+    <LayoutWithNav openNavQR={openNavQR}>
+      <main className="min-h-screen bg-gradient-to-b from-orange-50 to-white flex flex-col items-center px-4 py-6 relative">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b">
-          <p className="font-semibold text-gray-800">Settings</p>
-          <button onClick={() => setSidebarOpen(false)}>
-            <X className="w-5 h-5 text-gray-600" />
-          </button>
+        <div className="w-full max-w-md flex justify-center items-center mb-6">
+          <Image src={logo2} alt="PowerUp Rewards" width={150} height={50} priority />
         </div>
 
-        {/* Body */}
-        <div className="p-4 space-y-4">
-          <button
-            onClick={handleLogout}
-            className="w-full bg-orange-500 hover:bg-orange-600 text-white px-6 py-2 rounded-lg transition-all"
-          >
-            Logout
-          </button>
-        </div>
-      </div>
-
-      {/* Bottom Navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg z-40">
-        <div className="flex justify-around items-center relative h-16">
-          <div className="flex space-x-6">
-            <NavItem
-              label="Home"
-              icon={<Home className="w-6 h-6" />}
-              onClick={() => router.push("/dashboard")}
-            />
-            <NavItem
-              label="Transactions"
-              icon={<List className="w-6 h-6" />}
-              onClick={() => router.push("/transactions")}
-            />
-          </div>
-
-          {/* Floating QR Nav Button */}
-          <button
-            onClick={openNavQR}
-            className="absolute -top-6 left-1/2 -translate-x-1/2 bg-orange-500 text-white rounded-full w-14 h-14 flex items-center justify-center shadow-lg hover:bg-orange-600 transition"
-          >
-            <QrCode className="w-7 h-7" />
-          </button>
-
-          <div className="flex space-x-6">
-            <NavItem
-              label="Rewards"
-              icon={<Gift className="w-6 h-6" />}
-              onClick={() => router.push("/rewards")}
-            />
-            <NavItem
-              label="Account"
-              icon={<User className="w-6 h-6" />}
-              onClick={() => setSidebarOpen(true)}
-            />
+        {/* Greeting & Points */}
+        <div className="w-full max-w-md bg-white/70 backdrop-blur-lg border border-orange-100 rounded-3xl shadow-lg p-5 mb-5">
+          <p className="text-xl font-semibold text-gray-800 text-left">
+            Good day, <span className="text-orange-500">{user.name}</span>
+          </p>
+          <div className="flex flex-col items-center mt-2 mb-5">
+            <p className="text-5xl font-extrabold text-orange-500 mt-1 mb-2 tracking-wide">
+              {user.totalPoints}
+            </p>
+            <p className="text-md font-medium text-gray-700">Total Points</p>
           </div>
         </div>
-      </nav>
-    </main>
+
+        {/* Earn Points */}
+        <div className="w-full max-w-md mt-6 mb-5">
+          <h2 className="text-lg font-bold text-gray-800 mb-4">Earn Points</h2>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="flex flex-col items-center bg-white/80 backdrop-blur-lg border border-orange-100 p-4 rounded-2xl shadow-md">
+              <Bike className="w-10 h-10 text-orange-500 mb-2" />
+              <p className="text-sm font-semibold text-gray-800">Tricycle</p>
+              <p className="text-xs text-gray-500 mt-1">1 liter = 1 point</p>
+            </div>
+            <div className="flex flex-col items-center bg-white/80 backdrop-blur-lg border border-orange-100 p-4 rounded-2xl shadow-md">
+              <Truck className="w-10 h-10 text-orange-500 mb-2" />
+              <p className="text-sm font-semibold text-gray-800">Multicab</p>
+              <p className="text-xs text-gray-500 mt-1">1 liter = 1 point</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Rewards Section */}
+        <div className="w-full max-w-md mb-8">
+          <h2 className="text-lg font-bold text-gray-800 mb-4">Rewards</h2>
+          <div className="bg-white/90 backdrop-blur-lg rounded-3xl shadow-md border border-orange-100 p-5 flex flex-col">
+            {userTiers.map((tier, idx) => (
+              <p
+                key={idx}
+                className={`text-base font-semibold text-gray-800 ${
+                  user.totalPoints >= tier.points ? "" : "opacity-50"
+                }`}
+              >
+                {tier.points} Points = ₱{tier.peso.toFixed(2)}
+              </p>
+            ))}
+            <div className="flex justify-end mt-4">
+              <button
+                onClick={handleRedeemClick}
+                className={`bg-orange-500 hover:bg-orange-600 text-white px-6 py-2 rounded-lg transition-all ${
+                  !canRedeem ? "opacity-50 cursor-not-allowed" : ""
+                }`}
+                disabled={!canRedeem}
+              >
+                Redeem
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Slide-to-Show QR */}
+        {showSlideDialog && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-2xl p-6 shadow-xl w-80 text-center relative">
+              <X
+                className="absolute top-3 right-3 w-5 h-5 text-gray-500 cursor-pointer"
+                onClick={() => setShowSlideDialog(false)}
+              />
+              <h3 className="text-lg font-semibold text-gray-800 mb-4">Slide to Reveal QR</h3>
+              <div
+                ref={sliderRef}
+                className="relative w-full h-12 bg-gray-200 rounded-full overflow-hidden select-none touch-none"
+                onPointerDown={startDrag}
+                onPointerMove={onDrag}
+                onPointerUp={endDrag}
+                onPointerLeave={endDrag}
+              >
+                <div
+                  className="absolute left-0 top-0 h-full bg-orange-500 rounded-full transition-all"
+                  style={{ width: `${sliderWidth}%` }}
+                />
+                <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-white font-semibold">
+                  Slide to Redeem
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {qrOpen && voucher && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-2xl p-6 shadow-xl w-80 text-center relative">
+              <button
+                onClick={() => setQrOpen(false)}
+                className="absolute top-3 right-3 text-gray-500 hover:text-gray-700"
+              >
+                <X className="w-5 h-5" />
+              </button>
+              <h3 className="text-lg font-semibold text-gray-800 mb-4">My e-Voucher</h3>
+              <div className="flex justify-center mb-3">
+                <QRCodeSVG value={voucher.code} size={160} bgColor="#fff" fgColor="#000" />
+              </div>
+              <p className="text-xs text-gray-600 mb-1">Voucher Code: {voucher.code}</p>
+              <p className="text-sm font-medium text-gray-700">Amount: ₱{voucher.amount}</p>
+              <p className="text-xs text-gray-500">
+                Expires: {new Date(voucher.expiresAt).toLocaleDateString()}
+              </p>
+              <p className="text-sm font-medium text-gray-700 mt-2">
+                Expires in: {redeemTimer} sec
+              </p>
+            </div>
+          </div>
+        )}
+      </main>
+    </LayoutWithNav>
   );
 }
 
