@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
+import InstallPWAButton from "./components/InstallPWAButton"; // ✅ we'll create this next
 
 export const metadata: Metadata = {
   title: "PowerUp Rewards",
@@ -11,7 +12,6 @@ export const metadata: Metadata = {
   },
 };
 
-// ✅ Move themeColor to viewport export
 export const viewport: Viewport = {
   themeColor: "#ff4500",
 };
@@ -19,7 +19,20 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <head>
+        {/* ✅ PWA meta tags */}
+        <meta name="theme-color" content="#ff4500" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
+        <link rel="manifest" href="/manifest.json" />
+      </head>
+      <body className="bg-gray-50 text-gray-900">
+        {children}
+
+        {/* ✅ Floating Install button */}
+        <InstallPWAButton />
+      </body>
     </html>
   );
 }
