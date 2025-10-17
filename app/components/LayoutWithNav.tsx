@@ -5,13 +5,26 @@ import { useRouter } from "next/navigation";
 import { QrCode, Gift, Home, List, User, X } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 
-export default function LayoutWithNav({ children }: { children: React.ReactNode }) {
+interface LayoutWithNavProps {
+  children: React.ReactNode;
+  openNavQR?: () => void; // 👈 optional callback prop
+}
+
+interface User {
+  _id: string;
+  name: string;
+  email: string;
+  qrCode: string;
+  displayCode?: string;
+  expiresAt?: Date | string;
+}
+export default function LayoutWithNav({ children, openNavQR }: LayoutWithNavProps) {
   const router = useRouter();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   // QR modal states
   const [qrOpen, setQrOpen] = useState(false);
-  const [user, setUser] = useState<any | null>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [redeemTimer, setRedeemTimer] = useState(0);
 
   // ⏱️ QR countdown timer
@@ -41,26 +54,26 @@ export default function LayoutWithNav({ children }: { children: React.ReactNode 
   }, []);
 
   // 🧩 Open QR Modal using user’s QR Code
-  const openNavQR = () => {
-    if (!user) {
-      alert("No user data found. Please log in again.");
-      router.push("/login");
-      return;
-    }
+  //   const handleOpenNavQR = () => {
+  //     if (!user) {
+  //       alert("No user data found. Please log in again.");
+  //       router.push("/login");
+  //       return;
+  //     }
 
-    // You can customize what data to show in QR:
-    const qrValue = user.qrCode || user._id || user.email || "NO-QR";
+  //     // You can customize what data to show in QR:
+  //     const qrValue = user.qrCode || user._id || user.email || "NO-QR";
 
-    setQrOpen(true);
-    setRedeemTimer(30);
+  //     setQrOpen(true);
+  //     setRedeemTimer(30);
 
-    // Save QR info to state (for display details)
-    setUser((prev: any) => ({
-      ...prev,
-      displayCode: qrValue,
-      expiresAt: new Date(Date.now() + 1000 * 30),
-    }));
-  };
+  //     // Save QR info to state (for display details)
+  //     setUser((prev: any) => ({
+  //       ...prev,
+  //       displayCode: qrValue,
+  //       expiresAt: new Date(Date.now() + 1000 * 30),
+  //     }));
+  //   };
 
   return (
     <>
@@ -106,7 +119,7 @@ export default function LayoutWithNav({ children }: { children: React.ReactNode 
             <h3 className="text-lg font-semibold text-gray-800 mb-4">My PowerUp QR</h3>
             <div className="flex justify-center mb-3">
               <QRCodeSVG
-                value={user.displayCode || user.qrCode || user._id || "NO-QR"}
+                value={user.qrCode || user._id || "NO-QR"}
                 size={160}
                 bgColor="#fff"
                 fgColor="#000"

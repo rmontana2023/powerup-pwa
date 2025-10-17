@@ -27,6 +27,7 @@ export async function GET() {
 
     return NextResponse.json({ user });
   } catch (err) {
-    return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+    console.error("❌ Registration error:", err);
+    return NextResponse.json({ err: "Invalid token" }, { status: 401 });
   }
 }

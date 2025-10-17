@@ -34,7 +34,7 @@ export async function POST(req: Request) {
       { expiresIn: "7d" }
     );
 
-    const { password, ...userData } = user.toObject();
+    const { ...userData } = user.toObject();
     return NextResponse.json({
       message: "OTP verified successfully",
       token,

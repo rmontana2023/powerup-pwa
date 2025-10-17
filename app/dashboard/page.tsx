@@ -1,8 +1,9 @@
 "use client";
+import React from "react";
 import { useEffect, useState, useRef } from "react";
 import { QRCodeSVG } from "qrcode.react";
 import { useRouter } from "next/navigation";
-import { X, Wallet, Clock, Bike, Truck, Home, List, Gift, User, QrCode } from "lucide-react";
+import { X, Bike, Truck, User } from "lucide-react";
 import Image from "next/image";
 import logo2 from "../../public/assets/logo/powerup-logo-2.png";
 import LayoutWithNav from "../components/LayoutWithNav";
@@ -20,12 +21,25 @@ const REWARD_TIERS: Record<string, { points: number; peso: number }[]> = {
     { points: 5000, peso: 3500 },
   ],
 };
+interface User {
+  _id: string;
+  name: string;
+  email: string;
+  qrCode: string;
+  accountType: string;
+  totalPoints: number;
+}
 
+interface Voucher {
+  code: string;
+  amount: number;
+  expiresAt: Date;
+}
 export default function DashboardPage() {
   const router = useRouter();
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  // const [sidebarOpen, setSidebarOpen] = useState(false);
 
   // QR / Redeem state
   const [qrOpen, setQrOpen] = useState(false);
@@ -36,7 +50,7 @@ export default function DashboardPage() {
   const [redeemTimer, setRedeemTimer] = useState(30);
   const redeemTimerRef = useRef<NodeJS.Timeout | null>(null);
   const pointerStart = useRef(0);
-  const [voucher, setVoucher] = useState<any | null>(null);
+  const [voucher, setVoucher] = useState<Voucher | null>(null);
   const [loadingVoucher, setLoadingVoucher] = useState(false);
 
   useEffect(() => {
@@ -148,10 +162,6 @@ export default function DashboardPage() {
     setQrOpen(true);
     setRedeemTimer(30);
   };
-  const handleLogout = async () => {
-    await fetch("/api/auth/logout", { method: "POST" });
-    router.push("/login");
-  };
 
   return (
     <LayoutWithNav openNavQR={openNavQR}>
@@ -261,8 +271,11 @@ export default function DashboardPage() {
               <div className="flex justify-center mb-3">
                 <QRCodeSVG value={voucher.code} size={160} bgColor="#fff" fgColor="#000" />
               </div>
+
               <p className="text-xs text-gray-600 mb-1">Voucher Code: {voucher.code}</p>
-              <p className="text-sm font-medium text-gray-700">Amount: ₱{voucher.amount}</p>
+              <p className="text-sm font-medium text-gray-700">
+                Amount: ₱ {voucher.amount ? voucher.amount : "N/A"}
+              </p>
               <p className="text-xs text-gray-500">
                 Expires: {new Date(voucher.expiresAt).toLocaleDateString()}
               </p>
@@ -277,31 +290,31 @@ export default function DashboardPage() {
   );
 }
 
-function MenuItem({ label, icon }: { label: string; icon: JSX.Element }) {
-  return (
-    <div className="flex flex-col items-center justify-center bg-white/70 backdrop-blur-lg p-4 rounded-2xl shadow hover:scale-105 hover:bg-orange-50 transition cursor-pointer">
-      <div className="mb-2 text-orange-500">{icon}</div>
-      <span className="text-xs font-medium text-gray-800">{label}</span>
-    </div>
-  );
-}
+// function MenuItem({ label, icon }: { label: string; icon: React.ReactNode }) {
+//   return (
+//     <div className="flex flex-col items-center justify-center bg-white/70 backdrop-blur-lg p-4 rounded-2xl shadow hover:scale-105 hover:bg-orange-50 transition cursor-pointer">
+//       <div className="mb-2 text-orange-500">{icon}</div>
+//       <span className="text-xs font-medium text-gray-800">{label}</span>
+//     </div>
+//   );
+// }
 
-function NavItem({
-  label,
-  icon,
-  onClick,
-}: {
-  label: string;
-  icon: JSX.Element;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className="flex flex-col items-center justify-center text-gray-600 hover:text-orange-500 transition"
-    >
-      {icon}
-      <span className="text-xs mt-1">{label}</span>
-    </button>
-  );
-}
+// function NavItem({
+//   label,
+//   icon,
+//   onClick,
+// }: {
+//   label: string;
+//   icon: React.ReactNode;
+//   onClick: () => void;
+// }) {
+//   return (
+//     <button
+//       onClick={onClick}
+//       className="flex flex-col items-center justify-center text-gray-600 hover:text-orange-500 transition"
+//     >
+//       {icon}
+//       <span className="text-xs mt-1">{label}</span>
+//     </button>
+//   );
+// }

@@ -54,8 +54,9 @@ export default function RegisterPage() {
       setUserId(data.userId);
       setOtpMode(true);
       setSuccessMsg("We’ve sent a 6-digit OTP to your email. Please check your inbox.");
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err) {
+      console.error(err);
+      setError("Error encountered");
     } finally {
       setLoading(false);
     }
@@ -83,8 +84,9 @@ export default function RegisterPage() {
       localStorage.setItem("token", data.token);
       localStorage.setItem("user", JSON.stringify(data.user));
       window.location.href = "/dashboard";
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err) {
+      console.error(err);
+      setError("Error on verification");
     } finally {
       setLoading(false);
     }

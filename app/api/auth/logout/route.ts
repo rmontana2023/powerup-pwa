@@ -1,9 +1,15 @@
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
 
 export async function POST() {
-  // Remove the token cookie
-  cookies().delete("token");
+  const response = NextResponse.json({ message: "Logged out successfully" });
 
-  return NextResponse.json({ message: "Logged out successfully" });
+  // ✅ Delete the token cookie by setting it expired
+  response.cookies.set({
+    name: "token",
+    value: "",
+    expires: new Date(0), // past date
+    path: "/",
+  });
+
+  return response;
 }
