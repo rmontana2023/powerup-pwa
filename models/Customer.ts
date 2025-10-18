@@ -19,6 +19,8 @@ const customerSchema = new mongoose.Schema(
     otp: { type: String }, // 🔑 store temporary OTP
     otpExpires: { type: Date },
     isVerified: { type: Boolean, default: false }, // ✅ new field
+    resetToken: { type: String }, // 🔑 password reset token
+    resetTokenExpires: { type: Date }, // ⏱ token expiration
   },
   { timestamps: true }
 );
