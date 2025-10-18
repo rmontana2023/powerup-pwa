@@ -131,8 +131,6 @@ export default function TransactionsPage() {
     })),
   ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
-  if (loading) return <p className="text-center mt-10">Loading...</p>;
-
   const openNavQR = () => {
     if (!user) {
       alert("User not loaded yet. Please log in again.");

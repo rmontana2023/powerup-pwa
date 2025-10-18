@@ -90,7 +90,6 @@ export default function DashboardPage() {
     };
   }, [qrOpen]);
 
-  if (loading) return <p className="text-center mt-10">Loading...</p>;
   if (!user) return null;
 
   const userTiers = REWARD_TIERS[user.accountType || "ordinary"];
