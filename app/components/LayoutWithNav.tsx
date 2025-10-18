@@ -7,7 +7,8 @@ import { QRCodeSVG } from "qrcode.react";
 
 interface LayoutWithNavProps {
   children: React.ReactNode;
-  openNavQR?: () => void; // optional callback prop
+  openNavQR?: () => void;
+  user?: User | null; // pass user from parent
 }
 
 interface User {
@@ -158,8 +159,11 @@ export default function LayoutWithNav({ children, openNavQR }: LayoutWithNavProp
 
       {/* QR Modal */}
       {qrOpen && user && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-2xl p-6 shadow-xl w-80 text-center relative">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center ">
+          {/* Semi-transparent overlay */}
+          <div className="absolute inset-0" onClick={() => setQrOpen(false)} />
+          {/* Modal content */}
+          <div className="relative bg-white rounded-2xl p-6 w-80 text-center z-50">
             <button
               onClick={() => setQrOpen(false)}
               className="absolute top-3 right-3 text-gray-500 hover:text-gray-700"
@@ -175,7 +179,7 @@ export default function LayoutWithNav({ children, openNavQR }: LayoutWithNavProp
                 fgColor="#000"
               />
             </div>
-            <p className="text-xs text-gray-600 mb-1">Voucher Code: {user.qrCode}</p>
+            <p className="text-xs text-gray-600 mb-1">QR Code: {user.qrCode}</p>
             <p className="text-xs text-gray-500">
               Expires:{" "}
               {user.expiresAt ? new Date(user.expiresAt).toLocaleTimeString() : "30 seconds"}
@@ -203,7 +207,11 @@ export default function LayoutWithNav({ children, openNavQR }: LayoutWithNavProp
 
           {/* Floating QR Button */}
           <button
-            onClick={openNavQR}
+            onClick={() => {
+              if (openNavQR) openNavQR(); // keep existing behavior
+              setQrOpen(true);
+              setRedeemTimer(30);
+            }}
             className="absolute -top-6 left-1/2 -translate-x-1/2 bg-orange-500 text-white rounded-full w-14 h-14 flex items-center justify-center shadow-lg hover:bg-orange-600 transition"
           >
             <QrCode className="w-7 h-7" />

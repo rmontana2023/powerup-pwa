@@ -2,6 +2,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import logo2 from "../../public/assets/logo/powerup-logo-2.png";
+import { Eye, EyeOff } from "lucide-react";
 
 export default function RegisterPage() {
   const [form, setForm] = useState({
@@ -10,7 +11,8 @@ export default function RegisterPage() {
     phone: "",
     address: "",
     password: "",
-    accountType: "ordinary", // 👈 default
+    confirmPassword: "",
+    accountType: "ordinary",
   });
   const [error, setError] = useState("");
   const [otpMode, setOtpMode] = useState(false);
@@ -19,7 +21,9 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false);
   const [successMsg, setSuccessMsg] = useState("");
 
-  // 🟠 STEP 1: REGISTER USER
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
@@ -27,9 +31,8 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
-      // ✅ Frontend Validation
-      if (!form.name || !form.email || !form.password) {
-        throw new Error("Name, email, and password are required.");
+      if (!form.name || !form.email || !form.password || !form.confirmPassword) {
+        throw new Error("All required fields must be filled.");
       }
 
       if (!/\S+@\S+\.\S+/.test(form.email)) {
@@ -40,6 +43,10 @@ export default function RegisterPage() {
         throw new Error("Password must be at least 6 characters.");
       }
 
+      if (form.password !== form.confirmPassword) {
+        throw new Error("Passwords do not match.");
+      }
+
       const res = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -47,22 +54,18 @@ export default function RegisterPage() {
       });
 
       const data = await res.json();
-      console.log("🚀 ~ handleRegister ~ data:", data);
       if (!res.ok) throw new Error(data.error || "Registration failed");
 
-      // ✅ Show OTP screen
       setUserId(data.userId);
       setOtpMode(true);
       setSuccessMsg("We’ve sent a 6-digit OTP to your email. Please check your inbox.");
-    } catch (err) {
-      console.error(err);
-      setError("Error encountered");
+    } catch (err: any) {
+      setError(err.message || "Error encountered");
     } finally {
       setLoading(false);
     }
   };
 
-  // 🟢 STEP 2: VERIFY OTP
   const handleVerifyOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
@@ -79,13 +82,11 @@ export default function RegisterPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Invalid OTP");
 
-      // ✅ Verification success
       setSuccessMsg("✅ OTP verified successfully!");
       localStorage.setItem("token", data.token);
       localStorage.setItem("user", JSON.stringify(data.user));
       window.location.href = "/dashboard";
     } catch (err) {
-      console.error(err);
       setError("Error on verification");
     } finally {
       setLoading(false);
@@ -93,7 +94,7 @@ export default function RegisterPage() {
   };
 
   return (
-    <main className="flex items-center justify-center min-h-screen bg-white">
+    <main className="flex items-center justify-center min-h-screen bg-white px-4">
       <div className="bg-white rounded-2xl w-full max-w-md p-8 animate-fadeIn">
         {/* Logo */}
         <div className="flex flex-col items-center mb-8">
@@ -145,14 +146,45 @@ export default function RegisterPage() {
               onChange={(e) => setForm({ ...form, address: e.target.value })}
               className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
             />
-            <input
-              type="password"
-              placeholder="Password"
-              value={form.password}
-              onChange={(e) => setForm({ ...form, password: e.target.value })}
-              className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
-              required
-            />
+
+            {/* Password */}
+            <div className="relative">
+              <input
+                type={showPassword ? "text" : "password"}
+                placeholder="Password"
+                value={form.password}
+                onChange={(e) => setForm({ ...form, password: e.target.value })}
+                className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 pr-10"
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-3 text-gray-400 hover:text-gray-700"
+              >
+                {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+              </button>
+            </div>
+
+            {/* Confirm Password */}
+            <div className="relative">
+              <input
+                type={showConfirm ? "text" : "password"}
+                placeholder="Confirm Password"
+                value={form.confirmPassword}
+                onChange={(e) => setForm({ ...form, confirmPassword: e.target.value })}
+                className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 pr-10"
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirm(!showConfirm)}
+                className="absolute right-3 top-3 text-gray-400 hover:text-gray-700"
+              >
+                {showConfirm ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+              </button>
+            </div>
+
             <button
               type="submit"
               disabled={loading}

@@ -158,12 +158,12 @@ export default function DashboardPage() {
       amount: 0,
       expiresAt: new Date(Date.now() + 30 * 1000),
     });
-    setQrOpen(true);
+    // setQrOpen(true);
     setRedeemTimer(30);
   };
 
   return (
-    <LayoutWithNav openNavQR={openNavQR}>
+    <LayoutWithNav openNavQR={openNavQR} user={user}>
       <main className="min-h-screen bg-gradient-to-b from-orange-50 to-white flex flex-col items-center px-4 py-6 relative">
         {/* Header */}
         <div className="w-full max-w-md flex justify-center items-center mb-6">
@@ -257,9 +257,10 @@ export default function DashboardPage() {
           </div>
         )}
 
+        {/* Dashboard QR / Voucher QR */}
         {qrOpen && voucher && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-2xl p-6 shadow-xl w-80 text-center relative">
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60]">
+            <div className="bg-white rounded-2xl p-6 shadow-xl w-80 text-center relative z-[61]">
               <button
                 onClick={() => setQrOpen(false)}
                 className="absolute top-3 right-3 text-gray-500 hover:text-gray-700"
