@@ -1,49 +1,57 @@
 "use client";
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 
-export default function InstallPWAButton() {
-  const [deferredPrompt, setDeferredPrompt] = useState<Event | null>(null);
+const InstallPWAButton: React.FC = () => {
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [showButton, setShowButton] = useState(false);
+  const [isIOS, setIsIOS] = useState(false);
+  const [isInStandalone, setIsInStandalone] = useState(false);
 
   useEffect(() => {
-    const handleBeforeInstallPrompt = (e: Event) => {
+    const userAgent = window.navigator.userAgent.toLowerCase();
+    const isIOSDevice = /iphone|ipad|ipod/.test(userAgent);
+    setIsIOS(isIOSDevice);
+    setIsInStandalone("standalone" in window.navigator && (window.navigator as any).standalone);
+
+    // ✅ Works only on Android/Chrome
+    window.addEventListener("beforeinstallprompt", (e: any) => {
       e.preventDefault();
       setDeferredPrompt(e);
       setShowButton(true);
-    };
-
-    window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+    });
 
     return () => {
-      window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+      window.removeEventListener("beforeinstallprompt", () => {});
     };
   }, []);
 
-  const handleInstall = async () => {
-    if (!deferredPrompt) return;
-
-    // @ts-ignore - event type mismatch is normal for beforeinstallprompt
-    deferredPrompt.prompt();
-    // @ts-ignore
-    const choiceResult = await deferredPrompt.userChoice;
-    if (choiceResult.outcome === "accepted") {
-      console.log("✅ User accepted the PWA install prompt");
-    } else {
-      console.log("❌ User dismissed the PWA install prompt");
+  const handleInstallClick = async () => {
+    if (isIOS) {
+      alert(
+        "To install this app:\n\n1. Tap the Share icon (the square with the arrow ↑)\n2. Choose 'Add to Home Screen'"
+      );
+    } else if (deferredPrompt) {
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      if (outcome === "accepted") {
+        console.log("App installed");
+      }
+      setDeferredPrompt(null);
+      setShowButton(false);
     }
-
-    setDeferredPrompt(null);
-    setShowButton(false);
   };
 
-  if (!showButton) return null;
+  if (isInStandalone) return null; // Already installed
+  if (!showButton && !isIOS) return null; // Only show on eligible browsers
 
   return (
     <button
-      onClick={handleInstall}
-      className="fixed bottom-5 right-5 bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-full shadow-lg transition-all"
+      onClick={handleInstallClick}
+      className="fixed bottom-4 right-4 bg-orange-500 text-white px-4 py-2 rounded-full shadow-lg hover:bg-orange-600"
     >
       Install App
     </button>
   );
-}
+};
+
+export default InstallPWAButton;

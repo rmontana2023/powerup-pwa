@@ -1,7 +1,7 @@
 {
-  "name": "FuelUp Rewards",
+  "name": "PowerUp Rewards",
   "short_name": "PowerUp",
-  "description": "FuelUp Gasoline Rewards - Earn points every refuel!",
+  "description": "PowerUp Rewards - Earn points every refuel!",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
