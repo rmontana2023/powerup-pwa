@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
-import InstallPWAButton from "./components/InstallPWAButton"; // ✅ we'll create this next
+import AppWrapper from "./components/AppWrapper";
 
 export const metadata: Metadata = {
   title: "PowerUp Rewards",
@@ -20,7 +20,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <head>
-        {/* ✅ PWA meta tags */}
         <meta name="theme-color" content="#ff4500" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -28,10 +27,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="manifest" href="/manifest.json" />
       </head>
       <body className="bg-gray-50 text-gray-900">
-        {children}
-
-        {/* ✅ Floating Install button */}
-        <InstallPWAButton />
+        <AppWrapper>{children}</AppWrapper>
       </body>
     </html>
   );

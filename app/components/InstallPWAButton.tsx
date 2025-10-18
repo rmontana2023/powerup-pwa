@@ -1,28 +1,15 @@
 "use client";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
-export default function AutoInstallPWA() {
+export default function InstallPWAButton() {
+  const [deferredPrompt, setDeferredPrompt] = useState<Event | null>(null);
+  const [showButton, setShowButton] = useState(false);
+
   useEffect(() => {
-    // Define the custom event type
-    interface BeforeInstallPromptEvent extends Event {
-      prompt: () => Promise<void>;
-      userChoice: Promise<{ outcome: "accepted" | "dismissed"; platform: string }>;
-    }
-
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
-      const event = e as BeforeInstallPromptEvent;
-
-      // Wait a few seconds before showing the prompt
-      setTimeout(async () => {
-        try {
-          await event.prompt();
-          const choice = await event.userChoice;
-          console.log("PWA install outcome:", choice.outcome);
-        } catch (err) {
-          console.error("Error showing install prompt:", err);
-        }
-      }, 3000); // ⏳ delay 3 seconds after page load
+      setDeferredPrompt(e);
+      setShowButton(true);
     };
 
     window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
@@ -32,5 +19,31 @@ export default function AutoInstallPWA() {
     };
   }, []);
 
-  return null;
+  const handleInstall = async () => {
+    if (!deferredPrompt) return;
+
+    // @ts-ignore - event type mismatch is normal for beforeinstallprompt
+    deferredPrompt.prompt();
+    // @ts-ignore
+    const choiceResult = await deferredPrompt.userChoice;
+    if (choiceResult.outcome === "accepted") {
+      console.log("✅ User accepted the PWA install prompt");
+    } else {
+      console.log("❌ User dismissed the PWA install prompt");
+    }
+
+    setDeferredPrompt(null);
+    setShowButton(false);
+  };
+
+  if (!showButton) return null;
+
+  return (
+    <button
+      onClick={handleInstall}
+      className="fixed bottom-5 right-5 bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-full shadow-lg transition-all"
+    >
+      Install App
+    </button>
+  );
 }
