@@ -10,15 +10,6 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const [loading, setLoading] = useState(true); // Splash screen state
-
-  // Simulate preload effect
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setLoading(false);
-    }, 2000); // Show logo for 2s
-    return () => clearTimeout(timer);
-  }, []);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -54,21 +45,6 @@ export default function LoginPage() {
       setError("Something went wrong. Please try again.");
     }
   };
-
-  if (loading) {
-    return (
-      <main className="flex items-center justify-center min-h-screen bg-white">
-        <Image
-          src={logo}
-          alt="PowerUp Rewards"
-          width={200}
-          height={90}
-          priority
-          className="animate-pulse"
-        />
-      </main>
-    );
-  }
 
   // Login screen
   return (
