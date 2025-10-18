@@ -2,12 +2,12 @@
 
 import { useState, useEffect, JSX } from "react";
 import { useRouter } from "next/navigation";
-import { QrCode, Gift, Home, List, User, X } from "lucide-react";
+import { QrCode, Gift, Home, List, User, X, ChevronDown, ChevronUp } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 
 interface LayoutWithNavProps {
   children: React.ReactNode;
-  openNavQR?: () => void; // 👈 optional callback prop
+  openNavQR?: () => void; // optional callback prop
 }
 
 interface User {
@@ -18,16 +18,47 @@ interface User {
   displayCode?: string;
   expiresAt?: Date | string;
 }
+
+const sidebarMenu = [
+  {
+    title: "MEMBER PROFILE",
+    subItems: [
+      { title: "Personal Details", href: "/profile/personal" },
+      { title: "Additional Information", href: "/profile/additional" },
+    ],
+  },
+  {
+    title: "HELP CENTER",
+    subItems: [
+      {
+        title: "How to generate my Rewards and Redeem Points History?",
+        href: "/help/rewards-history",
+      },
+      { title: "About Us", href: "/help/about-us" },
+      { title: "Terms and Conditions", href: "/help/terms" },
+      { title: "Policy", href: "/help/policy" },
+    ],
+  },
+  {
+    title: "SETTINGS",
+    subItems: [
+      {
+        title: "Account Security (Change Password and Mobile No)",
+        href: "/settings/account-security",
+      },
+    ],
+  },
+];
+
 export default function LayoutWithNav({ children, openNavQR }: LayoutWithNavProps) {
   const router = useRouter();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-
-  // QR modal states
+  const [openMenus, setOpenMenus] = useState<{ [key: string]: boolean }>({});
   const [qrOpen, setQrOpen] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [redeemTimer, setRedeemTimer] = useState(0);
 
-  // ⏱️ QR countdown timer
+  // QR countdown timer
   useEffect(() => {
     let timer: NodeJS.Timeout;
     if (qrOpen && redeemTimer > 0) {
@@ -39,7 +70,7 @@ export default function LayoutWithNav({ children, openNavQR }: LayoutWithNavProp
     return () => clearInterval(timer);
   }, [qrOpen, redeemTimer]);
 
-  // 🔹 Load user from localStorage on mount
+  // Load user from localStorage
   useEffect(() => {
     if (typeof window !== "undefined") {
       const storedUser = localStorage.getItem("user");
@@ -53,27 +84,9 @@ export default function LayoutWithNav({ children, openNavQR }: LayoutWithNavProp
     }
   }, []);
 
-  // 🧩 Open QR Modal using user’s QR Code
-  //   const handleOpenNavQR = () => {
-  //     if (!user) {
-  //       alert("No user data found. Please log in again.");
-  //       router.push("/login");
-  //       return;
-  //     }
-
-  //     // You can customize what data to show in QR:
-  //     const qrValue = user.qrCode || user._id || user.email || "NO-QR";
-
-  //     setQrOpen(true);
-  //     setRedeemTimer(30);
-
-  //     // Save QR info to state (for display details)
-  //     setUser((prev: any) => ({
-  //       ...prev,
-  //       displayCode: qrValue,
-  //       expiresAt: new Date(Date.now() + 1000 * 30),
-  //     }));
-  //   };
+  const toggleMenu = (title: string) => {
+    setOpenMenus((prev) => ({ ...prev, [title]: !prev[title] }));
+  };
 
   return (
     <>
@@ -86,18 +99,55 @@ export default function LayoutWithNav({ children, openNavQR }: LayoutWithNavProp
             className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40"
             onClick={() => setSidebarOpen(false)}
           />
-          <div className="fixed top-0 right-0 h-full w-64 bg-white shadow-lg z-50 transition-transform duration-300">
+          <div className="fixed top-0 right-0 h-full w-64 bg-white shadow-lg z-50 transition-transform duration-300 overflow-y-auto">
             <div className="flex items-center justify-between p-4 border-b">
-              <p className="font-semibold text-gray-800">Settings</p>
+              <p className="font-semibold text-gray-800">ACCOUNT</p>
               <button onClick={() => setSidebarOpen(false)}>✖️</button>
             </div>
-            <div className="p-4">
+            <div className="p-4 flex flex-col gap-3">
+              {sidebarMenu.map((item) => (
+                <div key={item.title}>
+                  <button
+                    className="w-full flex justify-between items-center px-2 py-2 text-left font-semibold text-gray-700 hover:bg-gray-200 rounded"
+                    onClick={() => toggleMenu(item.title)}
+                  >
+                    {item.title}
+                    {item.subItems && (
+                      <span>
+                        {openMenus[item.title] ? (
+                          <ChevronUp size={18} />
+                        ) : (
+                          <ChevronDown size={18} />
+                        )}
+                      </span>
+                    )}
+                  </button>
+                  {item.subItems && openMenus[item.title] && (
+                    <div className="mt-1 ml-4 flex flex-col gap-1">
+                      {item.subItems.map((sub) => (
+                        <button
+                          key={sub.title}
+                          onClick={() => {
+                            router.push(sub.href);
+                            setSidebarOpen(false);
+                          }}
+                          className="px-2 py-1 text-gray-600 hover:text-gray-900 hover:bg-gray-200 rounded text-sm text-left"
+                        >
+                          {sub.title}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+
+              {/* Logout */}
               <button
                 onClick={() => {
                   localStorage.removeItem("user");
                   router.push("/login");
                 }}
-                className="w-full bg-orange-500 hover:bg-orange-600 text-white px-6 py-2 rounded-lg transition-all"
+                className="mt-4 w-full bg-orange-500 hover:bg-orange-600 text-white px-6 py-2 rounded-lg transition-all"
               >
                 Logout
               </button>
