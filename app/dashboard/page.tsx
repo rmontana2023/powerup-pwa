@@ -3,6 +3,7 @@ import React from "react";
 import { useEffect, useState, useRef } from "react";
 import { QRCodeSVG } from "qrcode.react";
 import { useRouter } from "next/navigation";
+import * as htmlToImage from "html-to-image";
 import { X, Bike, Truck, User } from "lucide-react";
 import Image from "next/image";
 import logo2 from "../../public/assets/logo/powerup-logo-2.png";
@@ -121,8 +122,8 @@ export default function DashboardPage() {
     if (!canRedeem) return;
     setShowSlideDialog(true);
   };
-  const revealVoucher = async () => {
-    if (!canRedeem || loadingVoucher) return;
+  const revealVoucher = async (selectedTier?: { points: number; peso: number }) => {
+    if (!selectedTier || loadingVoucher) return;
 
     setLoadingVoucher(true);
     try {
@@ -131,8 +132,8 @@ export default function DashboardPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           customerId: user._id,
-          amount: userTiers.find((tier) => user.totalPoints >= tier.points)?.peso || 0,
-          points: userTiers.find((tier) => user.totalPoints >= tier.points)?.points || 0,
+          amount: selectedTier.peso,
+          points: selectedTier.points,
         }),
       });
       const data = await res.json();
@@ -151,6 +152,15 @@ export default function DashboardPage() {
       setShowSlideDialog(false);
     }
   };
+
+  const handleRedeemSelect = (tier: { points: number; peso: number }) => {
+    if (user.totalPoints < tier.points) {
+      alert("Insufficient points");
+      return;
+    }
+    revealVoucher(tier);
+  };
+
   const openNavQR = () => {
     console.log("🚀 ~ openNavQR ~ user:", user);
     setVoucher({
@@ -228,7 +238,7 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Slide-to-Show QR */}
+        {/* Redeem Selection Modal */}
         {showSlideDialog && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
             <div className="bg-white rounded-2xl p-6 shadow-xl w-80 text-center relative">
@@ -236,22 +246,22 @@ export default function DashboardPage() {
                 className="absolute top-3 right-3 w-5 h-5 text-gray-500 cursor-pointer"
                 onClick={() => setShowSlideDialog(false)}
               />
-              <h3 className="text-lg font-semibold text-gray-800 mb-4">Slide to Reveal QR</h3>
-              <div
-                ref={sliderRef}
-                className="relative w-full h-12 bg-gray-200 rounded-full overflow-hidden select-none touch-none"
-                onPointerDown={startDrag}
-                onPointerMove={onDrag}
-                onPointerUp={endDrag}
-                onPointerLeave={endDrag}
-              >
-                <div
-                  className="absolute left-0 top-0 h-full bg-orange-500 rounded-full transition-all"
-                  style={{ width: `${sliderWidth}%` }}
-                />
-                <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-white font-semibold">
-                  Slide to Redeem
-                </span>
+              <h3 className="text-lg font-semibold text-gray-800 mb-4">Select Redeem Amount</h3>
+
+              <div className="space-y-3">
+                {userTiers.map((tier, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => handleRedeemSelect(tier)}
+                    className={`w-full py-2 rounded-lg font-semibold transition-all ${
+                      user.totalPoints >= tier.points
+                        ? "bg-orange-500 hover:bg-orange-600 text-white"
+                        : "bg-gray-200 text-gray-500 cursor-not-allowed"
+                    }`}
+                  >
+                    ₱{tier.peso} — {tier.points} Points
+                  </button>
+                ))}
               </div>
             </div>
           </div>
@@ -259,19 +269,40 @@ export default function DashboardPage() {
 
         {/* Dashboard QR / Voucher QR */}
         {qrOpen && voucher && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60]">
-            <div className="bg-white rounded-2xl p-6 shadow-xl w-80 text-center relative z-[61]">
+          <div className="fixed inset-0 flex items-center justify-center bg-white/50 backdrop-blur-lg z-[60]">
+            {/* Blurred QR background */}
+            <div className="absolute inset-0 flex items-center justify-center opacity-20 blur-lg">
+              <QRCodeSVG value={voucher.code} size={300} />
+            </div>
+
+            {/* Foreground Card */}
+            <div className="relative bg-white/80 backdrop-blur-md rounded-2xl p-6 shadow-2xl w-80 text-center border border-orange-100">
+              {/* Close */}
               <button
                 onClick={() => setQrOpen(false)}
-                className="absolute top-3 right-3 text-gray-500 hover:text-gray-700"
+                className="absolute top-3 right-3 text-gray-500 hover:text-gray-700 z-10"
               >
                 <X className="w-5 h-5" />
               </button>
-              <h3 className="text-lg font-semibold text-gray-800 mb-4">My e-Voucher</h3>
-              <div className="flex justify-center mb-3">
-                <QRCodeSVG value={voucher.code} size={160} bgColor="#fff" fgColor="#000" />
+
+              {/* User name */}
+              <p className="text-lg font-semibold text-orange-600 mb-2">{user.name}</p>
+
+              {/* Watermark */}
+              <p className="absolute inset-0 flex items-center justify-center text-6xl font-bold text-orange-300/20 rotate-[-30deg] select-none pointer-events-none">
+                {user.name}
+              </p>
+
+              {/* QR */}
+              <div
+                id="voucherQRContainer"
+                className="relative z-10 flex flex-col items-center justify-center mb-3 bg-white p-3 rounded-lg shadow"
+              >
+                <QRCodeSVG value={voucher.code} size={180} bgColor="#fff" fgColor="#000" />
+                <p className="text-xs mt-2 font-medium text-gray-600">{voucher.code}</p>
               </div>
 
+              {/* Voucher details */}
               <p className="text-xs text-gray-600 mb-1">Voucher Code: {voucher.code}</p>
               <p className="text-sm font-medium text-gray-700">
                 Amount: ₱ {voucher.amount ? voucher.amount : "N/A"}
@@ -279,9 +310,59 @@ export default function DashboardPage() {
               <p className="text-xs text-gray-500">
                 Expires: {new Date(voucher.expiresAt).toLocaleDateString()}
               </p>
-              <p className="text-sm font-medium text-gray-700 mt-2">
-                Expires in: {redeemTimer} sec
+              <p className="text-sm font-semibold text-orange-600 mt-2">
+                Expires in: {redeemTimer}s
               </p>
+
+              {/* Warning */}
+              <p className="text-xs text-red-600 font-semibold mt-4 px-2">
+                ⚠️ Screenshots will not be entertained by the cashier.
+              </p>
+
+              {/* Share & Download buttons */}
+              <div className="flex justify-center gap-3 mt-5 z-10">
+                <button
+                  onClick={async () => {
+                    const qrElement = document.getElementById("voucherQRContainer");
+                    if (!qrElement) return;
+
+                    try {
+                      const dataUrl = await htmlToImage.toPng(qrElement);
+                      const link = document.createElement("a");
+                      link.download = `${voucher.code}.png`;
+                      link.href = dataUrl;
+                      link.click();
+                    } catch (error) {
+                      console.error("Error downloading QR:", error);
+                    }
+                  }}
+                  className="bg-orange-500 hover:bg-orange-600 text-white text-sm px-4 py-2 rounded-lg shadow transition"
+                >
+                  Download
+                </button>
+
+                <button
+                  onClick={async () => {
+                    try {
+                      const shareData = {
+                        title: "PowerUp Voucher",
+                        text: `Here’s my PowerUp voucher worth ₱${voucher.amount}. Code: ${voucher.code}`,
+                        url: window.location.origin,
+                      };
+                      if (navigator.share) {
+                        await navigator.share(shareData);
+                      } else {
+                        alert("Sharing not supported on this device.");
+                      }
+                    } catch (err) {
+                      console.error("Share failed:", err);
+                    }
+                  }}
+                  className="bg-gray-200 hover:bg-gray-300 text-gray-800 text-sm px-4 py-2 rounded-lg shadow transition"
+                >
+                  Share
+                </button>
+              </div>
             </div>
           </div>
         )}
