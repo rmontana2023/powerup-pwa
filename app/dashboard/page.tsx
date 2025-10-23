@@ -173,7 +173,7 @@ export default function DashboardPage() {
   };
 
   return (
-    <LayoutWithNav openNavQR={openNavQR} user={user}>
+    <LayoutWithNav user={user}>
       <main className="min-h-screen bg-gradient-to-b from-orange-50 to-white flex flex-col items-center px-4 py-6 relative">
         {/* Header */}
         <div className="w-full max-w-md flex justify-center items-center mb-6">
