@@ -34,16 +34,20 @@ export default function LoginPage() {
         setError(data.error || "Login failed");
         return;
       }
-
-      // ✅ Save user data to localStorage (adjust field names based on your API response)
+      // ✅ Save user info locally
       if (data.user) {
-        localStorage.setItem("user", JSON.stringify(data.user)); // full object
-        localStorage.setItem("customerId", data.user._id || data.user.id); // for easy access
-        console.log("User saved locally:", data.user);
-      }
+        localStorage.setItem("user", JSON.stringify(data.user));
+        localStorage.setItem("customerId", data.user._id || data.user.id);
 
-      // ✅ Redirect to dashboard after login
-      router.push("/dashboard");
+        // ✅ Redirect based on role
+        if (data.user.role === "admin") {
+          router.push("/admin/dashboard");
+        } else {
+          router.push("/dashboard");
+        }
+      } else {
+        setError("User data missing in response");
+      }
     } catch (err) {
       console.error(err);
       setError("Something went wrong. Please try again.");

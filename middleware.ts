@@ -7,6 +7,7 @@ const publicPaths = ["/login", "/register", "/favicon.ico", "/manifest.json"];
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
+  // ✅ Allow public and API paths
   if (
     publicPaths.includes(pathname) ||
     pathname.startsWith("/api/auth/") ||
@@ -14,19 +15,16 @@ export async function middleware(req: NextRequest) {
     pathname.startsWith("/icons")
   ) {
     return NextResponse.next({
-      headers: {
-        "Cache-Control": "no-store",
-      },
+      headers: { "Cache-Control": "no-store" },
     });
   }
 
   const token = req.cookies.get("token")?.value;
 
+  // 🚫 No token → redirect to login
   if (!token) {
     return NextResponse.redirect(new URL("/login", req.url), {
-      headers: {
-        "Cache-Control": "no-store",
-      },
+      headers: { "Cache-Control": "no-store" },
     });
   }
 
@@ -36,27 +34,40 @@ export async function middleware(req: NextRequest) {
     }
 
     const { payload } = await jwtVerify(token, new TextEncoder().encode(process.env.JWT_SECRET));
-    console.log("Middleware: token verified", payload);
+    const role = payload.role as string;
 
+    console.log("✅ Middleware verified:", { path: pathname, role });
+
+    // ✅ Role-based redirects
+    if (pathname.startsWith("/admin") && role !== "admin") {
+      // Customer trying to access admin
+      return NextResponse.redirect(new URL("/customer/dashboard", req.url), {
+        headers: { "Cache-Control": "no-store" },
+      });
+    }
+
+    if (pathname.startsWith("/customer") && role !== "customer") {
+      // Admin trying to access customer page
+      return NextResponse.redirect(new URL("/admin/dashboard", req.url), {
+        headers: { "Cache-Control": "no-store" },
+      });
+    }
+
+    // ✅ Root redirect
     if (pathname === "/") {
-      return NextResponse.redirect(new URL("/dashboard", req.url), {
-        headers: {
-          "Cache-Control": "no-store",
-        },
+      const redirectPath = role === "admin" ? "/admin/dashboard" : "/customer/dashboard";
+      return NextResponse.redirect(new URL(redirectPath, req.url), {
+        headers: { "Cache-Control": "no-store" },
       });
     }
 
     return NextResponse.next({
-      headers: {
-        "Cache-Control": "no-store",
-      },
+      headers: { "Cache-Control": "no-store" },
     });
   } catch (error) {
-    console.log("Middleware: token invalid or expired", error);
+    console.error("❌ Middleware: invalid or expired token", error);
     return NextResponse.redirect(new URL("/login", req.url), {
-      headers: {
-        "Cache-Control": "no-store",
-      },
+      headers: { "Cache-Control": "no-store" },
     });
   }
 }

@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import jwt from "jsonwebtoken";
 import { connectDB } from "@/lib/db";
 import { Customer } from "@/models/Customer";
+import { User } from "@/models/User"; // ✅ add this
 
 export async function GET() {
   try {
@@ -15,19 +16,29 @@ export async function GET() {
       throw new Error("JWT_SECRET env variable is not set");
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET) as { id: string };
+    const decoded = jwt.verify(token, process.env.JWT_SECRET) as {
+      id: string;
+      role: string;
+    };
 
     await connectDB();
 
-    const user = await Customer.findById(decoded.id).select("-password");
+    let user = null;
+
+    // ✅ Check which collection based on role
+    if (decoded.role === "admin") {
+      user = await User.findById(decoded.id).select("-password");
+    } else {
+      user = await Customer.findById(decoded.id).select("-password");
+    }
 
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    return NextResponse.json({ user });
+    return NextResponse.json({ user, role: decoded.role });
   } catch (err) {
-    console.error("❌ Registration error:", err);
-    return NextResponse.json({ err: "Invalid token" }, { status: 401 });
+    console.error("❌ Auth check error:", err);
+    return NextResponse.json({ error: "Invalid token" }, { status: 401 });
   }
 }
