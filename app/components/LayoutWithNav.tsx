@@ -1,8 +1,7 @@
 "use client";
-import React from "react";
-import { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { QRCodeSVG } from "qrcode.react";
-import { QrCode, Gift, Home, List, User, X, ChevronUp, ChevronDown } from "lucide-react";
+import { QrCode, Gift, Home, List, User, ChevronUp, ChevronDown } from "lucide-react";
 import { useRouter } from "next/navigation";
 import SlideToRevealQR from "./SlideRevealQR";
 
@@ -36,6 +35,7 @@ const sidebarMenu = [
     ],
   },
 ];
+
 export default function LayoutWithNav({
   children,
   user,
@@ -54,7 +54,7 @@ export default function LayoutWithNav({
   const startX = useRef(0);
   const [dragging, setDragging] = useState(false);
 
-  // Timer countdown
+  // Timer countdown for reveal
   useEffect(() => {
     let timer: NodeJS.Timeout;
     if (revealed && redeemTimer > 0) {
@@ -67,7 +67,6 @@ export default function LayoutWithNav({
     return () => clearInterval(timer);
   }, [revealed, redeemTimer]);
 
-  // Slide handling
   const handleStart = (e: React.PointerEvent) => {
     setDragging(true);
     startX.current = e.clientX;
@@ -89,52 +88,55 @@ export default function LayoutWithNav({
     }
     setSliderProgress(0);
   };
+
   const toggleMenu = (title: string) => {
     setOpenMenus((prev) => ({ ...prev, [title]: !prev[title] }));
   };
+
   return (
     <>
-      <main className="min-h-screen pb-20">{children}</main>
-      {/* Sidebar Drawer */}{" "}
+      {/* Page content */}
+      <main className="min-h-screen pb-20 bg-[#0a0a0a] text-[#ededed]">{children}</main>
+
+      {/* Sidebar Drawer */}
       {sidebarOpen && (
         <>
-          {" "}
           <div
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40"
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40"
             onClick={() => setSidebarOpen(false)}
-          />{" "}
-          <div className="fixed top-0 right-0 h-full w-64 bg-white shadow-lg z-50 transition-transform duration-300 overflow-y-auto">
-            {" "}
-            <div className="flex items-center justify-between p-4 border-b">
-              {" "}
-              <p className="font-semibold text-gray-800">ACCOUNT</p>{" "}
-              <button onClick={() => setSidebarOpen(false)}>✖️</button>{" "}
-            </div>{" "}
+          />
+          <div className="fixed top-0 right-0 h-full w-64 bg-[#111] text-[#ededed] border-l border-[#222] z-50 shadow-lg transition-transform duration-300 overflow-y-auto">
+            <div className="flex items-center justify-between p-4 border-b border-[#222]">
+              <p className="font-semibold text-powerup-500">ACCOUNT</p>
+              <button
+                onClick={() => setSidebarOpen(false)}
+                className="text-gray-400 hover:text-powerup-500"
+              >
+                ✖️
+              </button>
+            </div>
+
             <div className="p-4 flex flex-col gap-3">
-              {" "}
               {sidebarMenu.map((item) => (
                 <div key={item.title}>
-                  {" "}
                   <button
-                    className="w-full flex justify-between items-center px-2 py-2 text-left font-semibold text-gray-700 hover:bg-gray-200 rounded"
+                    className="w-full flex justify-between items-center px-2 py-2 text-left font-semibold text-gray-300 hover:text-powerup-400 hover:bg-[#1a1a1a] rounded transition"
                     onClick={() => toggleMenu(item.title)}
                   >
-                    {" "}
-                    {item.title}{" "}
+                    {item.title}
                     {item.subItems && (
                       <span>
-                        {" "}
                         {openMenus[item.title] ? (
                           <ChevronUp size={18} />
                         ) : (
                           <ChevronDown size={18} />
-                        )}{" "}
+                        )}
                       </span>
-                    )}{" "}
-                  </button>{" "}
+                    )}
+                  </button>
+
                   {item.subItems && openMenus[item.title] && (
                     <div className="mt-1 ml-4 flex flex-col gap-1">
-                      {" "}
                       {item.subItems.map((sub) => (
                         <button
                           key={sub.title}
@@ -142,35 +144,44 @@ export default function LayoutWithNav({
                             router.push(sub.href);
                             setSidebarOpen(false);
                           }}
-                          className="px-2 py-1 text-gray-600 hover:text-gray-900 hover:bg-gray-200 rounded text-sm text-left"
+                          className="px-2 py-1 text-gray-400 hover:text-powerup-400 hover:bg-[#1a1a1a] rounded text-sm text-left transition"
                         >
-                          {" "}
-                          {sub.title}{" "}
+                          {sub.title}
                         </button>
-                      ))}{" "}
+                      ))}
                     </div>
-                  )}{" "}
+                  )}
                 </div>
-              ))}{" "}
-              {/* Logout */}{" "}
+              ))}
+
+              {/* Logout Button */}
               <button
                 onClick={() => {
                   localStorage.removeItem("user");
                   router.push("/login");
                 }}
-                className="mt-4 w-full bg-orange-500 hover:bg-orange-600 text-white px-6 py-2 rounded-lg transition-all"
+                className="mt-4 w-full bg-[var(--accent)] hover:bg-[var(--accent-dark)] text-black font-semibold px-6 py-2 rounded-lg transition-all"
               >
-                {" "}
-                Logout{" "}
-              </button>{" "}
-            </div>{" "}
-          </div>{" "}
+                Logout
+              </button>
+            </div>
+          </div>
         </>
       )}
+
       {/* Floating QR Button */}
-      {/* QR Button — positioned just above nav */}
+      <button
+        onClick={() => {
+          setShowSlide(true);
+          setRevealed(false);
+        }}
+        className="fixed bottom-10 left-1/2 -translate-x-1/2 bg-powerup-500 hover:bg-powerup-600 text-black rounded-full w-16 h-16 flex items-center justify-center shadow-lg z-50 border-4 border-[#0a0a0a] transition-all"
+      >
+        <QrCode className="w-8 h-8" />
+      </button>
+
       {/* Bottom Navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg z-40">
+      <nav className="fixed bottom-0 left-0 right-0 bg-[#111] border-t border-[#222] shadow-lg z-40">
         <div className="flex justify-around items-center h-16">
           <NavItem
             label="Home"
@@ -194,8 +205,8 @@ export default function LayoutWithNav({
           />
         </div>
       </nav>
+
       {/* Slide-to-Reveal QR */}
-      {/* ✅ Reusable Slide-to-Reveal QR */}
       {user && <SlideToRevealQR user={user} />}
     </>
   );
@@ -213,7 +224,7 @@ function NavItem({
   return (
     <button
       onClick={onClick}
-      className="flex flex-col items-center justify-center text-gray-600 hover:text-orange-500 transition"
+      className="flex flex-col items-center justify-center text-gray-400 hover:text-powerup-400 transition"
     >
       {icon}
       <span className="text-xs mt-1">{label}</span>

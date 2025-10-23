@@ -1,26 +1,45 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #0a0a0a; /* Dark charcoal background */
+  --foreground: #ededed; /* Light text */
+  --accent: #ffa215; /* Main PowerUp orange */
+  --accent-dark: #b66911;
+  --card-bg: #1a1a1a;
+  --text-muted: #aaaaaa;
+  --text-accent: #ffa215; /* Main PowerUp orange */
+  --border-color: #2a2a2a;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --color-accent: var(--accent);
+  --color-accent-dark: var(--accent-dark);
+  --color-card: var(--card-bg);
+  --color-muted: var(--text-muted);
+  --color-border: var(--border-color);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+a {
+  color: var(--accent);
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+a:hover {
+  color: var(--accent-dark);
+}
+
+button {
+  font-family: inherit;
+}
+
+.text-muted {
+  color: var(--text-muted);
 }

@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import * as htmlToImage from "html-to-image";
 import { X, Bike, Truck, User } from "lucide-react";
 import Image from "next/image";
-import logo2 from "../../public/assets/logo/powerup-logo-2.png";
+import newlogo from "../../public/assets/logo/powerup-new-logo.png";
 import LayoutWithNav from "../components/LayoutWithNav";
 
 const REWARD_TIERS: Record<string, { points: number; peso: number }[]> = {
@@ -35,6 +35,7 @@ interface Voucher {
   code: string;
   amount: number;
   expiresAt: Date;
+  createdAt: Date;
 }
 export default function DashboardPage() {
   const router = useRouter();
@@ -53,6 +54,57 @@ export default function DashboardPage() {
   const pointerStart = useRef(0);
   const [voucher, setVoucher] = useState<Voucher | null>(null);
   const [loadingVoucher, setLoadingVoucher] = useState(false);
+
+  // Screenshot deterrent for PWA (dark overlay on visibility change)
+  useEffect(() => {
+    // Create the black overlay once
+    const shield = document.createElement("div");
+    shield.id = "screenshotShield";
+    shield.style.position = "fixed";
+    shield.style.inset = "0";
+    shield.style.background = "black";
+    shield.style.zIndex = "999999";
+    shield.style.transition = "opacity 0.5s ease";
+    shield.style.opacity = "0";
+    shield.style.pointerEvents = "none"; // prevent blocking interactions when hidden
+    document.body.appendChild(shield);
+
+    const showShield = () => {
+      shield.style.opacity = "1";
+      shield.style.pointerEvents = "auto";
+    };
+
+    const hideShield = () => {
+      shield.style.opacity = "0";
+      shield.style.pointerEvents = "none";
+    };
+
+    // When user switches tabs or minimizes
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        showShield();
+      } else {
+        hideShield();
+      }
+    };
+
+    // When user alt-tabs or loses browser focus
+    const handleWindowBlur = () => showShield();
+    const handleWindowFocus = () => hideShield();
+
+    // Add listeners
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("blur", handleWindowBlur);
+    window.addEventListener("focus", handleWindowFocus);
+
+    // Cleanup
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("blur", handleWindowBlur);
+      window.removeEventListener("focus", handleWindowFocus);
+      shield.remove();
+    };
+  }, []);
 
   useEffect(() => {
     async function fetchUser() {
@@ -161,63 +213,63 @@ export default function DashboardPage() {
     revealVoucher(tier);
   };
 
-  const openNavQR = () => {
-    console.log("🚀 ~ openNavQR ~ user:", user);
-    setVoucher({
-      code: user.qrCode, // or `${user._id}:${user.name}` for example
-      amount: 0,
-      expiresAt: new Date(Date.now() + 30 * 1000),
-    });
-    // setQrOpen(true);
-    setRedeemTimer(30);
-  };
+  // const openNavQR = () => {
+  //   console.log("🚀 ~ openNavQR ~ user:", user);
+  //   setVoucher({
+  //     code: user.qrCode, // or `${user._id}:${user.name}` for example
+  //     amount: 0,
+  //     expiresAt: new Date(Date.now() + 30 * 1000),
+  //   });
+  //   // setQrOpen(true);
+  //   setRedeemTimer(30);
+  // };
 
   return (
     <LayoutWithNav user={user}>
-      <main className="min-h-screen bg-gradient-to-b from-orange-50 to-white flex flex-col items-center px-4 py-6 relative">
+      <main className="min-h-screen bg-[var(--background)] text-[var(--foreground)] flex flex-col items-center px-4 py-6 relative">
         {/* Header */}
         <div className="w-full max-w-md flex justify-center items-center mb-6">
-          <Image src={logo2} alt="PowerUp Rewards" width={150} height={50} priority />
+          <Image src={newlogo} alt="PowerUp Rewards" width={150} height={50} priority />
         </div>
 
         {/* Greeting & Points */}
-        <div className="w-full max-w-md bg-white/70 backdrop-blur-lg border border-orange-100 rounded-3xl shadow-lg p-5 mb-5">
-          <p className="text-xl font-semibold text-gray-800 text-left">
-            Good day, <span className="text-orange-500">{user.name}</span>
+        <div className="w-full max-w-md bg-[var(--card-bg)] border border-[var(--border-color)] rounded-3xl shadow-lg p-5 mb-5">
+          <p className="text-xl font-semibold">
+            Good day, <span className="text-[var(--accent)]">{user.name}</span>
           </p>
           <div className="flex flex-col items-center mt-2 mb-5">
-            <p className="text-5xl font-extrabold text-orange-500 mt-1 mb-2 tracking-wide">
+            <p className="text-5xl font-extrabold text-[var(--accent)] mt-1 mb-2 tracking-wide">
               {user.totalPoints}
             </p>
-            <p className="text-md font-medium text-gray-700">Total Points</p>
+            <p className="text-md text-[var(--text-muted)]">Total Points</p>
           </div>
         </div>
 
         {/* Earn Points */}
         <div className="w-full max-w-md mt-6 mb-5">
-          <h2 className="text-lg font-bold text-gray-800 mb-4">Earn Points</h2>
+          <h2 className="text-lg font-bold mb-4">Earn Points</h2>
           <div className="grid grid-cols-2 gap-4">
-            <div className="flex flex-col items-center bg-white/80 backdrop-blur-lg border border-orange-100 p-4 rounded-2xl shadow-md">
-              <Bike className="w-10 h-10 text-orange-500 mb-2" />
-              <p className="text-sm font-semibold text-gray-800">Tricycle</p>
-              <p className="text-xs text-gray-500 mt-1">1 liter = 1 point</p>
+            <div className="flex flex-col items-center bg-[var(--card-bg)] border border-[var(--border-color)] p-4 rounded-2xl shadow-md">
+              <Bike className="w-10 h-10 text-[var(--accent)] mb-2" />
+              <p className="text-sm font-semibold">Tricycle</p>
+              <p className="text-xs text-[var(--text-muted)] mt-1">1 liter = 1 point</p>
             </div>
-            <div className="flex flex-col items-center bg-white/80 backdrop-blur-lg border border-orange-100 p-4 rounded-2xl shadow-md">
-              <Truck className="w-10 h-10 text-orange-500 mb-2" />
-              <p className="text-sm font-semibold text-gray-800">Multicab</p>
-              <p className="text-xs text-gray-500 mt-1">1 liter = 1 point</p>
+            <div className="flex flex-col items-center bg-[var(--card-bg)] border border-[var(--border-color)] p-4 rounded-2xl shadow-md">
+              <Truck className="w-10 h-10 text-[var(--accent)] mb-2" />
+              <p className="text-sm font-semibold">Multicab</p>
+              <p className="text-xs text-[var(--text-muted)] mt-1">1 liter = 1 point</p>
             </div>
           </div>
         </div>
 
         {/* Rewards Section */}
         <div className="w-full max-w-md mb-8">
-          <h2 className="text-lg font-bold text-gray-800 mb-4">Rewards</h2>
-          <div className="bg-white/90 backdrop-blur-lg rounded-3xl shadow-md border border-orange-100 p-5 flex flex-col">
+          <h2 className="text-lg font-bold mb-4">Rewards</h2>
+          <div className="bg-[var(--card-bg)] rounded-3xl shadow-md border border-[var(--border-color)] p-5 flex flex-col">
             {userTiers.map((tier, idx) => (
               <p
                 key={idx}
-                className={`text-base font-semibold text-gray-800 ${
+                className={`text-base font-semibold ${
                   user.totalPoints >= tier.points ? "" : "opacity-50"
                 }`}
               >
@@ -227,7 +279,7 @@ export default function DashboardPage() {
             <div className="flex justify-end mt-4">
               <button
                 onClick={handleRedeemClick}
-                className={`bg-orange-500 hover:bg-orange-600 text-white px-6 py-2 rounded-lg transition-all ${
+                className={`bg-[var(--accent)] hover:bg-[var(--accent-dark)] text-white px-6 py-2 rounded-lg transition-all ${
                   !canRedeem ? "opacity-50 cursor-not-allowed" : ""
                 }`}
                 disabled={!canRedeem}
@@ -269,57 +321,89 @@ export default function DashboardPage() {
 
         {/* Dashboard QR / Voucher QR */}
         {qrOpen && voucher && (
-          <div className="fixed inset-0 flex items-center justify-center bg-white/50 backdrop-blur-lg z-[60]">
+          <div className="fixed inset-0 flex items-center justify-center bg-black/70 backdrop-blur-md z-[60]">
             {/* Blurred QR background */}
-            <div className="absolute inset-0 flex items-center justify-center opacity-20 blur-lg">
-              <QRCodeSVG value={voucher.code} size={300} />
+            <div className="absolute inset-0 flex items-center justify-center opacity-10 blur-lg">
+              <QRCodeSVG value={voucher.code} size={300} fgColor="#ffffff" bgColor="#000000" />
             </div>
 
             {/* Foreground Card */}
-            <div className="relative bg-white/80 backdrop-blur-md rounded-2xl p-6 shadow-2xl w-80 text-center border border-orange-100">
+            <div className="relative bg-neutral-900 text-white rounded-2xl p-6 shadow-2xl w-80 text-center border border-orange-500/30">
               {/* Close */}
               <button
                 onClick={() => setQrOpen(false)}
-                className="absolute top-3 right-3 text-gray-500 hover:text-gray-700 z-10"
+                className="absolute top-3 right-3 text-gray-400 hover:text-white z-10"
               >
                 <X className="w-5 h-5" />
               </button>
 
-              {/* User name */}
-              <p className="text-lg font-semibold text-orange-600 mb-2">{user.name}</p>
-
-              {/* Watermark */}
-              <p className="absolute inset-0 flex items-center justify-center text-6xl font-bold text-orange-300/20 rotate-[-30deg] select-none pointer-events-none">
-                {user.name}
-              </p>
+              {/* Logo */}
+              <div className="flex justify-center mb-4">
+                <Image
+                  src={newlogo}
+                  alt="PowerUp Logo"
+                  width={90}
+                  height={90}
+                  className="drop-shadow-lg"
+                />
+              </div>
 
               {/* QR */}
               <div
                 id="voucherQRContainer"
-                className="relative z-10 flex flex-col items-center justify-center mb-3 bg-white p-3 rounded-lg shadow"
+                className="relative z-10 flex flex-col items-center justify-center mb-4 bg-white p-4 rounded-xl shadow-md"
               >
-                <QRCodeSVG value={voucher.code} size={180} bgColor="#fff" fgColor="#000" />
-                <p className="text-xs mt-2 font-medium text-gray-600">{voucher.code}</p>
+                <QRCodeSVG value={voucher.code} size={180} bgColor="#ffffff" fgColor="#000000" />
               </div>
 
-              {/* Voucher details */}
-              <p className="text-xs text-gray-600 mb-1">Voucher Code: {voucher.code}</p>
-              <p className="text-sm font-medium text-gray-700">
-                Amount: ₱ {voucher.amount ? voucher.amount : "N/A"}
-              </p>
-              <p className="text-xs text-gray-500">
-                Expires: {new Date(voucher.expiresAt).toLocaleDateString()}
-              </p>
-              <p className="text-sm font-semibold text-orange-600 mt-2">
-                Expires in: {redeemTimer}s
+              {/* Voucher Amount */}
+              <p className="text-3xl font-bold text-orange-500 mb-1">
+                ₱{voucher.amount ? voucher.amount : "N/A"} OFF
               </p>
 
+              {/* “E-Voucher” Label */}
+              <p className="text-lg font-semibold text-white tracking-widest mb-2">E-Voucher</p>
+
+              {/* Voucher Code */}
+              <p className="text-base font-semibold text-orange-500 mb-3">Code: {voucher.code}</p>
+
+              {/* Created On */}
+              <p className="text-xs text-gray-400 mb-1">
+                Created on:{" "}
+                {new Date(voucher.createdAt)
+                  .toLocaleDateString("en-US", {
+                    year: "numeric",
+                    month: "long",
+                    day: "2-digit",
+                  })
+                  .toUpperCase()}
+              </p>
+              <p className="text-xs text-gray-400 mb-1">
+                Valid until{" "}
+                {new Date(voucher.expiresAt)
+                  .toLocaleDateString("en-US", {
+                    year: "numeric",
+                    month: "long",
+                    day: "2-digit",
+                  })
+                  .toUpperCase()}
+              </p>
+
+              {/* Customer Name */}
+              <p className="text-sm font-medium text-white">{user.name}</p>
+
+              {/* Timer */}
+              <p className="text-sm font-semibold text-orange-400">Expires in: {redeemTimer}s</p>
+
+              {/* Divider */}
+              <div className="border-t border-white/20 my-4" />
+
               {/* Warning */}
-              <p className="text-xs text-red-600 font-semibold mt-4 px-2">
+              <p className="text-xs text-red-400 font-semibold px-2">
                 ⚠️ Screenshots will not be entertained by the cashier.
               </p>
 
-              {/* Share & Download buttons */}
+              {/* Buttons */}
               <div className="flex justify-center gap-3 mt-5 z-10">
                 <button
                   onClick={async () => {
@@ -345,7 +429,7 @@ export default function DashboardPage() {
                   onClick={async () => {
                     try {
                       const shareData = {
-                        title: "PowerUp Voucher",
+                        title: "PowerUp E-Voucher",
                         text: `Here’s my PowerUp voucher worth ₱${voucher.amount}. Code: ${voucher.code}`,
                         url: window.location.origin,
                       };
@@ -358,7 +442,7 @@ export default function DashboardPage() {
                       console.error("Share failed:", err);
                     }
                   }}
-                  className="bg-gray-200 hover:bg-gray-300 text-gray-800 text-sm px-4 py-2 rounded-lg shadow transition"
+                  className="bg-gray-700 hover:bg-gray-600 text-white text-sm px-4 py-2 rounded-lg shadow transition"
                 >
                   Share
                 </button>
@@ -367,6 +451,9 @@ export default function DashboardPage() {
           </div>
         )}
       </main>
+
+      {/* Timer */}
+      <p className="text-sm font-semibold text-orange-400">Expires in: {redeemTimer}s</p>
     </LayoutWithNav>
   );
 }

@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import logo2 from "../../public/assets/logo/powerup-logo-2.png";
+import newlogo from "../../public/assets/logo/powerup-new-logo.png";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -75,11 +75,11 @@ export default function LoginPage() {
 
   // Login screen
   return (
-    <main className="flex items-center justify-center min-h-screen bg-white">
+    <main className="flex items-center justify-center min-h-screen bg-[var(--background)] text-[var(--foreground)]">
       <div className="w-full max-w-md p-8">
         {/* Logo */}
         <div className="flex flex-col items-center mb-8">
-          <Image src={logo2} alt="PowerUp Rewards" width={250} height={80} priority />
+          <Image src={newlogo} alt="PowerUp Rewards" width={250} height={80} priority />
         </div>
 
         {/* Form */}
@@ -89,7 +89,7 @@ export default function LoginPage() {
             placeholder="Email Address"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+            className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
             required
           />
           <input
@@ -97,7 +97,7 @@ export default function LoginPage() {
             placeholder="Password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+            className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
             required
           />
           {error && <p className="text-red-500 text-sm text-center">{error}</p>}
@@ -105,14 +105,14 @@ export default function LoginPage() {
             <button
               type="button"
               onClick={() => setShowForgot(true)}
-              className="text-orange-500 hover:underline"
+              className="text-[var(--accent)] hover:underline"
             >
               Forgot Password?
             </button>
           </div>
           <button
             type="submit"
-            className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold p-3 rounded-lg transition-all"
+            className="w-full bg-[var(--accent)] hover:bg-[var(--accent-dark)] text-white font-semibold p-3 rounded-lg transition-all"
           >
             Login
           </button>
@@ -121,7 +121,7 @@ export default function LoginPage() {
         {/* Footer */}
         <div className="mt-6 text-center text-sm text-gray-600">
           Don’t have an account?{" "}
-          <a href="/register" className="text-orange-500 hover:underline">
+          <a href="/register" className="text-[var(--accent)] hover:underline">
             Register
           </a>
         </div>

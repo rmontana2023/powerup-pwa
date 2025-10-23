@@ -1,13 +1,9 @@
 "use client";
-import React from "react";
-import { useEffect, useState, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { QRCodeSVG } from "qrcode.react";
-import { X, User } from "lucide-react";
 import Image from "next/image";
-import logo2 from "../../public/assets/logo/powerup-logo-2.png";
+import newlogo from "../../public/assets/logo/powerup-new-logo.png";
 import LayoutWithNav from "../components/LayoutWithNav";
-import QRVoucherModal from "../components/QRVoucherModal";
 import SlideToRevealQR from "../components/SlideRevealQR";
 
 interface Transaction {
@@ -26,6 +22,7 @@ interface Redemption {
   createdAt: string;
   stationId?: string;
 }
+
 interface User {
   _id: string;
   name: string;
@@ -38,16 +35,17 @@ interface Voucher {
   amount: number;
   expiresAt: Date;
 }
+
 export default function TransactionsPage() {
   const [user, setUser] = useState<User | null>(null);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [redemptions, setRedemptions] = useState<Redemption[]>([]);
-  const [voucher, setVoucher] = useState<Voucher | null>(null);
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [qrOpen, setQrOpen] = useState(false);
   const [redeemTimer, setRedeemTimer] = useState(30);
   const redeemTimerRef = useRef<NodeJS.Timeout | null>(null);
+
   useEffect(() => {
     async function fetchUser() {
       const res = await fetch("/api/auth/me");
@@ -61,39 +59,13 @@ export default function TransactionsPage() {
     }
     fetchUser();
   }, [router]);
-  useEffect(() => {
-    if (qrOpen) {
-      setRedeemTimer(30);
-      redeemTimerRef.current = setInterval(() => {
-        setRedeemTimer((prev) => {
-          if (prev <= 1) {
-            clearInterval(redeemTimerRef.current!);
-            setQrOpen(false);
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-    } else {
-      if (redeemTimerRef.current) clearInterval(redeemTimerRef.current);
-      setRedeemTimer(30);
-    }
-    return () => {
-      if (redeemTimerRef.current) clearInterval(redeemTimerRef.current);
-    };
-  }, [qrOpen]);
+
   useEffect(() => {
     async function fetchData() {
       try {
-        // 🔹 Replace this with where you store your customer ID
         const customerId =
           localStorage.getItem("customerId") || sessionStorage.getItem("customerId");
-
-        if (!customerId) {
-          console.warn("No customerId found in storage!");
-          setLoading(false);
-          return;
-        }
+        if (!customerId) return;
 
         const [txRes, rdRes] = await Promise.all([
           fetch(`/api/transactions/me?customerId=${customerId}`),
@@ -115,12 +87,13 @@ export default function TransactionsPage() {
     fetchData();
   }, []);
 
+  // Combine and sort both transactions + redemptions
   const combined = [
     ...transactions.map((t) => ({
       _id: t._id,
       type: "Transaction",
       date: t.taggedAt,
-      details: `${t.liters}L - ₱${t.amount}`,
+      details: `${t.liters}L • ₱${t.amount}`,
       points: `+${t.pointsEarned} pts`,
       station: t.stationId?.name || "Station",
     })),
@@ -134,55 +107,42 @@ export default function TransactionsPage() {
     })),
   ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
-  const openNavQR = () => {
-    if (!user) {
-      alert("User not loaded yet. Please log in again.");
-      router.push("/login");
-      return;
-    }
-
-    setVoucher({
-      code: user.qrCode, // ✅ safe now
-      amount: 0,
-      expiresAt: new Date(Date.now() + 30 * 1000),
-    });
-
-    setQrOpen(true);
-    setRedeemTimer(30);
-  };
   return (
-    <LayoutWithNav>
-      <main className="min-h-screen bg-gradient-to-b from-orange-50 to-white flex flex-col items-center px-4 py-6 pb-24">
+    <LayoutWithNav user={user}>
+      <main className="min-h-screen bg-[var(--background)] text-[var(--foreground)] flex flex-col items-center px-4 py-6 pb-24">
         {/* Header */}
         <div className="w-full max-w-md flex justify-center items-center mb-6">
-          <Image src={logo2} alt="PowerUp Rewards" width={150} height={50} priority />
+          <Image src={newlogo} alt="PowerUp Rewards" width={160} height={50} priority />
         </div>
 
-        <div className="w-full max-w-md bg-white/70 backdrop-blur-lg border border-orange-100 rounded-3xl shadow-lg p-5 mb-5">
-          <h2 className="text-lg font-bold text-gray-800 mb-4">Transaction History </h2>
+        {/* Transaction Card */}
+        <div className="w-full max-w-md bg-white/10 backdrop-blur-lg border border-white/10 rounded-3xl shadow-lg p-5 mb-5">
+          <h2 className="text-lg font-semibold mb-4 text-[var(--accent)]">Transaction History</h2>
 
-          {combined.length === 0 ? (
+          {loading ? (
+            <p className="text-center text-gray-400 text-sm">Loading...</p>
+          ) : combined.length === 0 ? (
             <p className="text-center text-gray-500 text-sm">No transactions yet.</p>
           ) : (
             <div className="space-y-3 max-h-[65vh] overflow-y-auto">
               {combined.map((item) => (
                 <div
                   key={item._id}
-                  className={`flex justify-between items-center p-3 rounded-xl shadow-sm border ${
+                  className={`flex justify-between items-center p-3 rounded-xl border transition-all duration-200 ${
                     item.type === "Transaction"
-                      ? "border-orange-100 bg-orange-50"
-                      : "border-gray-200 bg-gray-50"
+                      ? "border-[var(--accent)]/20 bg-[var(--accent)]/10 hover:bg-[var(--accent)]/20"
+                      : "border-red-400/20 bg-red-400/10 hover:bg-red-400/20"
                   }`}
                 >
                   <div className="flex flex-col">
                     <span
                       className={`text-sm font-semibold ${
-                        item.type === "Transaction" ? "text-orange-600" : "text-gray-700"
+                        item.type === "Transaction" ? "text-[var(--accent)]" : "text-red-400"
                       }`}
                     >
                       {item.type}
                     </span>
-                    <span className="text-xs text-gray-600">{item.details}</span>
+                    <span className="text-xs text-gray-300">{item.details}</span>
                     <span className="text-[11px] text-gray-500">
                       {new Date(item.date).toLocaleString()}
                     </span>
@@ -190,18 +150,19 @@ export default function TransactionsPage() {
                   <div className="text-right">
                     <span
                       className={`block text-sm font-bold ${
-                        item.type === "Transaction" ? "text-green-600" : "text-red-500"
+                        item.type === "Transaction" ? "text-green-400" : "text-red-400"
                       }`}
                     >
                       {item.points}
                     </span>
-                    <span className="text-[11px] text-gray-500">{item.station}</span>
+                    <span className="text-[11px] text-gray-400">{item.station}</span>
                   </div>
                 </div>
               ))}
             </div>
           )}
         </div>
+
         {user && <SlideToRevealQR user={user} />}
       </main>
     </LayoutWithNav>
