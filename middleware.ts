@@ -41,12 +41,12 @@ export async function middleware(req: NextRequest) {
     // ✅ Role-based redirects
     if (pathname.startsWith("/admin") && role !== "admin") {
       // Customer trying to access admin
-      return NextResponse.redirect(new URL("/customer/dashboard", req.url), {
+      return NextResponse.redirect(new URL("/dashboard", req.url), {
         headers: { "Cache-Control": "no-store" },
       });
     }
 
-    if (pathname.startsWith("/customer") && role !== "customer") {
+    if (pathname.startsWith("/") && role !== "customer") {
       // Admin trying to access customer page
       return NextResponse.redirect(new URL("/admin/dashboard", req.url), {
         headers: { "Cache-Control": "no-store" },
@@ -55,7 +55,7 @@ export async function middleware(req: NextRequest) {
 
     // ✅ Root redirect
     if (pathname === "/") {
-      const redirectPath = role === "admin" ? "/admin/dashboard" : "/customer/dashboard";
+      const redirectPath = role === "admin" ? "/admin/dashboard" : "/dashboard";
       return NextResponse.redirect(new URL(redirectPath, req.url), {
         headers: { "Cache-Control": "no-store" },
       });

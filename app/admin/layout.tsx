@@ -1,13 +1,14 @@
 "use client";
 import Link from "next/link";
 import Image from "next/image";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
-import { Menu, X } from "lucide-react";
+import { Menu, X, LogOut } from "lucide-react";
 import logo from "@/public/assets/logo/powerup-new-logo.png";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const navItems = [
@@ -16,6 +17,16 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     { name: "Points", path: "/admin/points" },
     { name: "Reports", path: "/admin/reports" },
   ];
+
+  const handleLogout = async () => {
+    try {
+      // Call logout API
+      await fetch("/api/auth/logout", { method: "POST" });
+      router.push("/login");
+    } catch (error) {
+      console.error("Logout failed:", error);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-black text-white flex flex-col md:flex-row">
@@ -52,6 +63,15 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               {item.name}
             </Link>
           ))}
+
+          {/* Logout Button */}
+          <button
+            onClick={handleLogout}
+            className="mt-5 flex items-center gap-2 px-3 py-2 rounded-md text-gray-400 hover:text-white hover:bg-gray-800 transition-colors text-sm font-medium"
+          >
+            <LogOut size={18} />
+            Logout
+          </button>
         </nav>
       </aside>
 
