@@ -4,7 +4,8 @@ import { useEffect, useState, useRef } from "react";
 import { QRCodeSVG } from "qrcode.react";
 import { useRouter } from "next/navigation";
 import * as htmlToImage from "html-to-image";
-import { X, Bike, Truck, User } from "lucide-react";
+import { X, User } from "lucide-react";
+import { FaMotorcycle, FaCar } from "react-icons/fa";
 import Image from "next/image";
 import newlogo from "../../public/assets/logo/powerup-new-logo.png";
 import LayoutWithNav from "../components/LayoutWithNav";
@@ -249,14 +250,16 @@ export default function DashboardPage() {
         <div className="w-full max-w-md mt-6 mb-5">
           <h2 className="text-lg font-bold mb-4">Earn Points</h2>
           <div className="grid grid-cols-2 gap-4">
+            {/* Motorcycle */}
             <div className="flex flex-col items-center bg-[var(--card-bg)] border border-[var(--border-color)] p-4 rounded-2xl shadow-md">
-              <Bike className="w-10 h-10 text-[var(--accent)] mb-2" />
-              <p className="text-sm font-semibold">Tricycle</p>
+              <FaMotorcycle className="w-10 h-10 text-[var(--accent)] mb-2" />
+              <p className="text-sm font-semibold">Motorcycles</p>
               <p className="text-xs text-[var(--text-muted)] mt-1">1 liter = 1 point</p>
             </div>
+            {/* Cars */}
             <div className="flex flex-col items-center bg-[var(--card-bg)] border border-[var(--border-color)] p-4 rounded-2xl shadow-md">
-              <Truck className="w-10 h-10 text-[var(--accent)] mb-2" />
-              <p className="text-sm font-semibold">Multicab</p>
+              <FaCar className="w-10 h-10 text-[var(--accent)] mb-2" />
+              <p className="text-sm font-semibold">Cars</p>
               <p className="text-xs text-[var(--text-muted)] mt-1">1 liter = 1 point</p>
             </div>
           </div>
@@ -451,9 +454,6 @@ export default function DashboardPage() {
           </div>
         )}
       </main>
-
-      {/* Timer */}
-      <p className="text-sm font-semibold text-orange-400">Expires in: {redeemTimer}s</p>
     </LayoutWithNav>
   );
 }
