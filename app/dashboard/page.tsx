@@ -281,7 +281,7 @@ export default function DashboardPage() {
             ))}
             <div className="flex justify-end mt-4">
               <button
-                onClick={handleRedeemClick}
+                onClick={() => router.push("/rewards")}
                 className={`bg-[var(--accent)] hover:bg-[var(--accent-dark)] text-white px-6 py-2 rounded-lg transition-all ${
                   !canRedeem ? "opacity-50 cursor-not-allowed" : ""
                 }`}

@@ -1,5 +1,12 @@
 @import "tailwindcss";
+@plugin "tailwindcss-animate";
+@import "sweetalert2/dist/sweetalert2.min.css";
 
+/* @import "tw-animate-css"; */
+
+@custom-variant dark (&:is(.dark *));
+
+/* 🎨 PowerUp PWA Color Palette */
 :root {
   --background: #0a0a0a; /* Dark charcoal background */
   --foreground: #ededed; /* Light text */
@@ -7,10 +14,29 @@
   --accent-dark: #b66911;
   --card-bg: #1a1a1a;
   --text-muted: #aaaaaa;
-  --text-accent: #ffa215; /* Main PowerUp orange */
+  --text-accent: #ffa215;
   --border-color: #2a2a2a;
+  --radius: 0.625rem;
+
+  /* Additional standard tokens (for shadcn compatibility) */
+  --card: var(--card-bg);
+  --card-foreground: var(--foreground);
+  --popover: var(--card-bg);
+  --popover-foreground: var(--foreground);
+  --primary: var(--accent);
+  --primary-foreground: var(--background);
+  --secondary: #2a2a2a;
+  --secondary-foreground: var(--foreground);
+  --muted: var(--card-bg);
+  --muted-foreground: var(--text-muted);
+  --accent-foreground: var(--background);
+  --destructive: #ff4d4f;
+  --border: var(--border-color);
+  --input: var(--border-color);
+  --ring: var(--accent);
 }
 
+/* Inline theme variables for Tailwind color refs */
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -19,14 +45,29 @@
   --color-card: var(--card-bg);
   --color-muted: var(--text-muted);
   --color-border: var(--border-color);
+  --color-primary: var(--accent);
+  --color-primary-foreground: var(--background);
+  --color-secondary: #2a2a2a;
+  --color-secondary-foreground: var(--foreground);
+  --color-ring: var(--accent);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* 🌙 Dark mode (optional override if ever toggled) */
+.dark {
+  --background: #0a0a0a;
+  --foreground: #ededed;
+  --card-bg: #1a1a1a;
+  --text-muted: #aaaaaa;
+  --accent: #ffa215;
+  --accent-dark: #b66911;
+  --border-color: #2a2a2a;
 }
 
+/* 🔤 Base styles */
 a {
   color: var(--accent);
   text-decoration: none;
@@ -42,4 +83,14 @@ button {
 
 .text-muted {
   color: var(--text-muted);
+}
+
+/* 🧱 Tailwind base layer setup */
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
 }
