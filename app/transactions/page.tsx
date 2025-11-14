@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import newlogo from "../../public/assets/logo/powerup-new-logo.png";
@@ -30,21 +30,13 @@ interface User {
   qrCode: string;
 }
 
-interface Voucher {
-  code: string;
-  amount: number;
-  expiresAt: Date;
-}
-
 export default function TransactionsPage() {
   const [user, setUser] = useState<User | null>(null);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [redemptions, setRedemptions] = useState<Redemption[]>([]);
-  const router = useRouter();
   const [loading, setLoading] = useState(true);
-  const [qrOpen, setQrOpen] = useState(false);
-  const [redeemTimer, setRedeemTimer] = useState(30);
-  const redeemTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const [filter, setFilter] = useState("all");
+  const router = useRouter();
 
   useEffect(() => {
     async function fetchUser() {
@@ -55,7 +47,6 @@ export default function TransactionsPage() {
       }
       const data = await res.json();
       setUser(data.user);
-      setLoading(false);
     }
     fetchUser();
   }, [router]);
@@ -87,25 +78,58 @@ export default function TransactionsPage() {
     fetchData();
   }, []);
 
-  // Combine and sort both transactions + redemptions
-  const combined = [
-    ...transactions.map((t) => ({
-      _id: t._id,
-      type: "Transaction",
-      date: t.taggedAt,
-      details: `${t.liters}L • ₱${t.amount}`,
-      points: `+${t.pointsEarned} pts`,
-      station: t.stationId?.name || "Station",
-    })),
-    ...redemptions.map((r) => ({
-      _id: r._id,
-      type: "Redemption",
-      date: r.createdAt,
-      details: r.description || "Points redeemed",
-      points: `-${r.points} pts`,
-      station: r.stationId || "Station",
-    })),
-  ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  // Combine transactions + redemptions
+  const combined = useMemo(() => {
+    return [
+      ...transactions.map((t) => ({
+        _id: t._id,
+        type: "Transaction",
+        date: t.taggedAt,
+        details: `${t.liters}L • ₱${t.amount}`,
+        points: `+${t.pointsEarned} pts`,
+        station: t.stationId?.name || "Station",
+      })),
+      ...redemptions.map((r) => ({
+        _id: r._id,
+        type: "Redemption",
+        date: r.createdAt,
+        details: r.description || "Points redeemed",
+        points: `-${r.points} pts`,
+        station: r.stationId || "Station",
+      })),
+    ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  }, [transactions, redemptions]);
+
+  // ⏳ Filter logic
+  const filtered = useMemo(() => {
+    if (filter === "all") return combined;
+
+    const now = new Date();
+    let cutoff: Date | null = null;
+
+    switch (filter) {
+      case "yesterday":
+        cutoff = new Date(now);
+        cutoff.setDate(now.getDate() - 1);
+        return combined.filter(
+          (item) => new Date(item.date).toDateString() === cutoff!.toDateString()
+        );
+      case "3days":
+        cutoff = new Date(now);
+        cutoff.setDate(now.getDate() - 3);
+        break;
+      case "7days":
+        cutoff = new Date(now);
+        cutoff.setDate(now.getDate() - 7);
+        break;
+      case "30days":
+        cutoff = new Date(now);
+        cutoff.setDate(now.getDate() - 30);
+        break;
+    }
+
+    return combined.filter((item) => new Date(item.date) >= cutoff!);
+  }, [combined, filter]);
 
   return (
     <LayoutWithNav user={user}>
@@ -117,15 +141,30 @@ export default function TransactionsPage() {
 
         {/* Transaction Card */}
         <div className="w-full max-w-md bg-white/10 backdrop-blur-lg border border-white/10 rounded-3xl shadow-lg p-5 mb-5">
-          <h2 className="text-lg font-semibold mb-4 text-[var(--accent)]">Transaction History</h2>
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-lg font-semibold text-[var(--accent)]">Transaction History</h2>
+
+            {/* 🔽 Filter Dropdown */}
+            <select
+              value={filter}
+              onChange={(e) => setFilter(e.target.value)}
+              className="bg-transparent border border-white/20 text-sm text-gray-300 rounded-lg px-2 py-1 outline-none focus:ring-1 focus:ring-[var(--accent)]"
+            >
+              <option value="all">All</option>
+              <option value="yesterday">Yesterday</option>
+              <option value="3days">Last 3 Days</option>
+              <option value="7days">Last 7 Days</option>
+              <option value="30days">Last 30 Days</option>
+            </select>
+          </div>
 
           {loading ? (
             <p className="text-center text-gray-400 text-sm">Loading...</p>
-          ) : combined.length === 0 ? (
-            <p className="text-center text-gray-500 text-sm">No transactions yet.</p>
+          ) : filtered.length === 0 ? (
+            <p className="text-center text-gray-500 text-sm">No transactions found.</p>
           ) : (
             <div className="space-y-3 max-h-[65vh] overflow-y-auto">
-              {combined.map((item) => (
+              {filtered.map((item) => (
                 <div
                   key={item._id}
                   className={`flex justify-between items-center p-3 rounded-xl border transition-all duration-200 ${
@@ -159,6 +198,25 @@ export default function TransactionsPage() {
                   </div>
                 </div>
               ))}
+            </div>
+          )}
+          {filtered.length >= 100 && (
+            <div className="text-center mt-4">
+              <button
+                onClick={async () => {
+                  if (!user?.email) return alert("No email found.");
+                  const res = await fetch(
+                    `/api/transactions/me?customerId=${
+                      user._id
+                    }&export=true&email=${encodeURIComponent(user.email)}`
+                  );
+                  const data = await res.json();
+                  alert(data.message || "Request sent successfully!");
+                }}
+                className="mt-2 text-sm bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white px-4 py-2 rounded-xl transition-all"
+              >
+                Request Full History via Email
+              </button>
             </div>
           )}
         </div>
