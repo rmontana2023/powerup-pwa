@@ -56,57 +56,6 @@ export default function DashboardPage() {
   const [voucher, setVoucher] = useState<Voucher | null>(null);
   const [loadingVoucher, setLoadingVoucher] = useState(false);
 
-  // Screenshot deterrent for PWA (dark overlay on visibility change)
-  useEffect(() => {
-    // Create the black overlay once
-    const shield = document.createElement("div");
-    shield.id = "screenshotShield";
-    shield.style.position = "fixed";
-    shield.style.inset = "0";
-    shield.style.background = "black";
-    shield.style.zIndex = "999999";
-    shield.style.transition = "opacity 0.5s ease";
-    shield.style.opacity = "0";
-    shield.style.pointerEvents = "none"; // prevent blocking interactions when hidden
-    document.body.appendChild(shield);
-
-    const showShield = () => {
-      shield.style.opacity = "1";
-      shield.style.pointerEvents = "auto";
-    };
-
-    const hideShield = () => {
-      shield.style.opacity = "0";
-      shield.style.pointerEvents = "none";
-    };
-
-    // When user switches tabs or minimizes
-    const handleVisibilityChange = () => {
-      if (document.hidden) {
-        showShield();
-      } else {
-        hideShield();
-      }
-    };
-
-    // When user alt-tabs or loses browser focus
-    const handleWindowBlur = () => showShield();
-    const handleWindowFocus = () => hideShield();
-
-    // Add listeners
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-    window.addEventListener("blur", handleWindowBlur);
-    window.addEventListener("focus", handleWindowFocus);
-
-    // Cleanup
-    return () => {
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
-      window.removeEventListener("blur", handleWindowBlur);
-      window.removeEventListener("focus", handleWindowFocus);
-      shield.remove();
-    };
-  }, []);
-
   useEffect(() => {
     async function fetchUser() {
       const res = await fetch("/api/auth/me");

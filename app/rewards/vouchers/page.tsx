@@ -194,7 +194,7 @@ export default function MyVouchersPage() {
                   day: "2-digit",
                 })}
               </p>
-              <p className="text-sm font-medium text-white">{user.name}</p>
+              <p className="text-sm font-medium text-white">{user?.name}</p>
 
               {/* Divider */}
               <div className="border-t border-white/20 my-4" />
