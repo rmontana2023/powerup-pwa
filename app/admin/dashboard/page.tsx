@@ -21,13 +21,21 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     async function fetchStats() {
-      const res = await fetch("/api/admin/stats");
+      const res = await fetch("/api/admin/stats", {
+        credentials: "include",
+      });
+
       if (res.ok) setStats(await res.json());
+      else console.log("Stats error:", await res.text());
     }
 
     async function fetchTrends() {
-      const res = await fetch("/api/admin/stats/trends");
+      const res = await fetch("/api/admin/stats/trends", {
+        credentials: "include",
+      });
+
       if (res.ok) setTrends(await res.json());
+      else console.log("Trends error:", await res.text());
     }
 
     fetchStats();

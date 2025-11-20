@@ -6,13 +6,16 @@ import { Transaction } from "@/models/Transaction";
 
 export async function GET() {
   try {
+    console.log("------ Getting Stats ------------------");
     await connectDB();
 
     // Total customers
     const customers = await Customer.countDocuments();
+    console.log("🚀 ~ GET ~ customers:", customers);
 
     // Total transactions
     const transactions = await Transaction.countDocuments();
+    console.log("🚀 ~ GET ~ transactions:", transactions);
 
     // Total points (sum of all customers’ totalPoints)
     const pointsAgg = await Customer.aggregate([

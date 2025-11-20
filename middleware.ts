@@ -10,7 +10,7 @@ export async function middleware(req: NextRequest) {
   // ✅ Allow public and API paths
   if (
     publicPaths.includes(pathname) ||
-    pathname.startsWith("/api/auth/") ||
+    pathname.startsWith("/api/") ||
     pathname.startsWith("/_next") ||
     pathname.startsWith("/icons")
   ) {
@@ -38,19 +38,16 @@ export async function middleware(req: NextRequest) {
 
     console.log("✅ Middleware verified:", { path: pathname, role });
 
-    // ✅ Role-based redirects
+    // CUSTOMER trying to access admin pages → block
     if (pathname.startsWith("/admin") && role !== "admin") {
-      // Customer trying to access admin
-      return NextResponse.redirect(new URL("/dashboard", req.url), {
-        headers: { "Cache-Control": "no-store" },
-      });
+      console.log("CUSTOMER trying to access admin pages → block");
+      return NextResponse.redirect(new URL("/dashboard", req.url));
     }
 
-    if (pathname.startsWith("/") && role !== "customer") {
-      // Admin trying to access customer page
-      return NextResponse.redirect(new URL("/admin/dashboard", req.url), {
-        headers: { "Cache-Control": "no-store" },
-      });
+    // ADMIN trying to access customer pages → block
+    if (!pathname.startsWith("/admin") && role === "admin" && pathname !== "/") {
+      console.log("ADMIN trying to access customer pages → block");
+      return NextResponse.redirect(new URL("/admin/dashboard", req.url));
     }
 
     // ✅ Root redirect
