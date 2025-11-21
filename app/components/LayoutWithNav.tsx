@@ -9,8 +9,8 @@ const sidebarMenu = [
   {
     title: "MEMBER PROFILE",
     subItems: [
-      { title: "Personal Details", href: "/profile/personal" },
-      { title: "Additional Information", href: "/profile/additional" },
+      { title: "Personal Details", href: "/" },
+      { title: "Additional Information", href: "/" },
     ],
   },
   {
@@ -30,7 +30,7 @@ const sidebarMenu = [
     subItems: [
       {
         title: "Account Security (Change Password and Mobile No)",
-        href: "/settings/account-security",
+        href: "/",
       },
     ],
   },

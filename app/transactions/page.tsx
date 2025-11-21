@@ -221,7 +221,7 @@ export default function TransactionsPage() {
           )}
         </div>
 
-        {user && <SlideToRevealQR user={user} />}
+        {/* {user && <SlideToRevealQR user={user} />} */}
       </main>
     </LayoutWithNav>
   );
