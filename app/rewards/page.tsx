@@ -426,15 +426,33 @@ export default function RewardsPage() {
                     if (!voucherRef.current) return;
 
                     try {
+                      // Generate PNG from voucherRef
                       const dataUrl = await htmlToImage.toPng(voucherRef.current, {
                         cacheBust: true,
                       });
-                      const link = document.createElement("a");
-                      link.download = `${voucher.code}.png`;
-                      link.href = dataUrl;
-                      link.click();
+
+                      // Convert DataURL to Blob
+                      const response = await fetch(dataUrl);
+                      const blob = await response.blob();
+                      const file = new File([blob], `${voucher.code}.png`, { type: blob.type });
+
+                      // Try mobile-friendly save/share
+                      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                        await navigator.share({
+                          files: [file],
+                          title: "PowerUp E-Voucher",
+                          text: `Here’s my PowerUp voucher worth ₱${voucher.amount}. Code: ${voucher.code}`,
+                        });
+                      } else {
+                        // Fallback: normal download
+                        const link = document.createElement("a");
+                        link.download = `${voucher.code}.png`;
+                        link.href = dataUrl;
+                        link.click();
+                      }
                     } catch (error) {
                       console.error("Error downloading voucher:", error);
+                      alert("Failed to download voucher. Please try again.");
                     }
                   }}
                   className="bg-orange-500 hover:bg-orange-600 text-white text-sm px-4 py-2 rounded-lg shadow transition"
