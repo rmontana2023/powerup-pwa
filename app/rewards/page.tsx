@@ -53,6 +53,8 @@ export default function RewardsPage() {
   const [selectedReward, setSelectedReward] = useState<{ points: number; peso: number } | null>(
     null
   );
+  const voucherRef = useRef<HTMLDivElement | null>(null);
+  const [lockedPoints, setLockedPoints] = useState(0);
 
   useEffect(() => {
     async function fetchUser() {
@@ -62,9 +64,19 @@ export default function RewardsPage() {
         return;
       }
       const data = await res.json();
-      console.log("🚀 ~ fetchUser ~ data:", data);
       setUser(data.user);
-      setTotalPoints(data.user?.totalPoints ?? 0);
+      const totalPoints = data.user?.totalPoints ?? 0;
+      // fetch unredeemed vouchers
+      const resVouchers = await fetch("/api/vouchers?customerId=" + data.user._id);
+      const dataVouchers = await resVouchers.json();
+      const unredeemed = dataVouchers.vouchers.filter((v: any) => !v.redeemed);
+      console.log("🚀 ~ fetchUser ~ unredeemed:", unredeemed);
+      const sumLocked = unredeemed.reduce((sum: number, v: any) => sum + (v.pointsLocked || 0), 0);
+      console.log("🚀 ~ fetchUser ~ sumLocked:", sumLocked);
+
+      setUser(data.user);
+      setLockedPoints(sumLocked);
+      setTotalPoints(totalPoints);
       setLoading(false);
     }
     fetchUser();
@@ -170,27 +182,6 @@ export default function RewardsPage() {
         return;
       }
 
-      // ✅ Check if user already has a voucher
-      const existingRes = await fetch(`/api/vouchers/user/${user._id}`);
-      const existingData = await existingRes.json();
-
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      if (existingData?.vouchers?.some((v: any) => !v.redeemed)) {
-        Swal.fire({
-          title: "Already Generated 😎",
-          text: "You can only generate one active voucher at a time.",
-          icon: "info",
-          background: "#1c1c1c",
-          color: "#fff",
-          confirmButtonColor: "#e66a00",
-          confirmButtonText: "Got it",
-          customClass: { popup: "rounded-2xl" },
-        });
-
-        setOtpModalOpen(false);
-        return;
-      }
-
       // OTP is valid → Create voucher
       setLoadingVoucher(true);
       const createRes = await fetch("/api/vouchers/create", {
@@ -204,7 +195,11 @@ export default function RewardsPage() {
       });
 
       const data = await createRes.json();
+      console.log("🚀 ~ handleValidateOTP ~ data:", data);
       if (data.success) {
+        // Update locked points
+        setLockedPoints((prev) => prev + selectedReward.points);
+        setTotalPoints(data.totalPoints);
         setVoucher(data.voucher);
         setOtpModalOpen(false);
         setQrOpen(true);
@@ -273,7 +268,9 @@ export default function RewardsPage() {
             <p className="text-gray-400 text-sm">Loading points...</p>
           ) : (
             <>
-              <h2 className="text-3xl font-bold text-[var(--accent)]">{totalPoints} points</h2>
+              <h2 className="text-3xl font-bold text-[var(--accent)]">
+                {totalPoints - lockedPoints} points
+              </h2>
             </>
           )}
         </div>
@@ -337,7 +334,10 @@ export default function RewardsPage() {
           </div>
         )}
         {voucher && (
-          <div className="fixed inset-0 flex items-center justify-center bg-black/70 backdrop-blur-md z-[60]">
+          <div
+            ref={voucherRef}
+            className="fixed inset-0 flex items-center justify-center bg-black/70 backdrop-blur-md z-[60]"
+          >
             {/* Blurred QR background */}
             <div className="absolute inset-0 flex items-center justify-center opacity-10 blur-lg">
               <QRCodeSVG value={voucher.code} size={300} fgColor="#ffffff" bgColor="#000000" />
@@ -423,17 +423,18 @@ export default function RewardsPage() {
               <div className="flex justify-center gap-3 mt-5 z-10">
                 <button
                   onClick={async () => {
-                    const qrElement = document.getElementById("voucherQRContainer");
-                    if (!qrElement) return;
+                    if (!voucherRef.current) return;
 
                     try {
-                      const dataUrl = await htmlToImage.toPng(qrElement);
+                      const dataUrl = await htmlToImage.toPng(voucherRef.current, {
+                        cacheBust: true,
+                      });
                       const link = document.createElement("a");
                       link.download = `${voucher.code}.png`;
                       link.href = dataUrl;
                       link.click();
                     } catch (error) {
-                      console.error("Error downloading QR:", error);
+                      console.error("Error downloading voucher:", error);
                     }
                   }}
                   className="bg-orange-500 hover:bg-orange-600 text-white text-sm px-4 py-2 rounded-lg shadow transition"
