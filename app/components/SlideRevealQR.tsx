@@ -166,9 +166,10 @@ export default function SlideToRevealQR({ user }: SlideToRevealQRProps) {
           >
             <QRCodeSVG
               value={user?.qrCode || user?._id || "NO-QR"}
-              size={350}
-              bgColor="var(--background)"
-              fgColor="#ffffff"
+              size={400}
+              bgColor="#ffffff"
+              fgColor="#000000"
+              level="H"
             />
           </div>
 
