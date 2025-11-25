@@ -9,6 +9,7 @@ import { FaMotorcycle, FaCar } from "react-icons/fa";
 import Image from "next/image";
 import newlogo from "../../public/assets/logo/powerup-new-logo.png";
 import LayoutWithNav from "../components/LayoutWithNav";
+import { Copy } from "lucide-react";
 
 const REWARD_TIERS: Record<string, { points: number; peso: number }[]> = {
   ordinary: [
@@ -55,6 +56,7 @@ export default function DashboardPage() {
   const pointerStart = useRef(0);
   const [voucher, setVoucher] = useState<Voucher | null>(null);
   const [loadingVoucher, setLoadingVoucher] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     async function fetchUser() {
@@ -173,6 +175,13 @@ export default function DashboardPage() {
   //   // setQrOpen(true);
   //   setRedeemTimer(30);
   // };
+  const handleCopy = () => {
+    navigator.clipboard.writeText(user?.qrCode || "");
+    setCopied(true);
+
+    // fade out after 1.2 sec
+    setTimeout(() => setCopied(false), 1200);
+  };
 
   return (
     <LayoutWithNav user={user}>
@@ -183,16 +192,56 @@ export default function DashboardPage() {
         </div>
 
         {/* Greeting & Points */}
-        <div className="w-full max-w-md bg-[var(--card-bg)] border border-[var(--border-color)] rounded-3xl shadow-lg p-5 mb-5">
-          <p className="text-xl font-semibold">
+        {/* ---------- USER INFO CARD ---------- */}
+        <div className="w-full max-w-md relative bg-[var(--card-bg)] backdrop-blur-xl border border-[var(--border-color)] rounded-3xl shadow-lg p-6 mb-6">
+          <p className="text-2xl font-semibold tracking-tight">
             Good day, <span className="text-[var(--accent)]">{user.name}</span>
           </p>
-          <div className="flex flex-col items-center mt-2 mb-5">
-            <p className="text-5xl font-extrabold text-[var(--accent)] mt-1 mb-2 tracking-wide">
-              {user.totalPoints}
+
+          {/* QR Code + Copy Button */}
+          <div className="mt-4 flex items-center gap-2">
+            <p className="text-sm text-[var(--text-muted)] break-all">
+              <span className="font-semibold text-[var(--accent)]">{user?.qrCode}</span>
             </p>
-            <p className="text-md text-[var(--text-muted)]">Total Points</p>
+
+            {/* Copy Icon Button */}
+            <button
+              onClick={handleCopy}
+              className="p-2 rounded-full hover:bg-[var(--accent)]/10 transition flex items-center justify-center"
+            >
+              <Copy className="w-4 h-4 text-[var(--accent)]" />
+            </button>
           </div>
+
+          {/* Copied Animation */}
+          <div
+            className={`absolute right-5 top-5 text-xs px-3 py-1 rounded-xl bg-[var(--accent)] text-white shadow-md transition-all duration-300 ${
+              copied ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-2"
+            }`}
+          >
+            QR Copied!
+          </div>
+
+          {/* Account Type */}
+          {/* Account Type */}
+          <div className="mt-4">
+            <span
+              className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold 
+    bg-[var(--accent)]/10 text-[var(--accent)] border border-[var(--accent)]/20"
+            >
+              {user?.accountType
+                ? user.accountType.charAt(0).toUpperCase() + user.accountType.slice(1)
+                : "Customer"}
+            </span>
+          </div>
+        </div>
+
+        {/* ---------- TOTAL POINTS CARD ---------- */}
+        <div className="w-full max-w-md bg-[var(--card-bg)] backdrop-blur-xl border border-[var(--border-color)] rounded-3xl shadow-md p-6 mb-6 flex flex-col items-center text-center">
+          <p className="text-6xl font-extrabold text-[var(--accent)] tracking-tight drop-shadow-sm">
+            {user.totalPoints}
+          </p>
+          <p className="text-lg font-medium text-[var(--text-muted)] mt-2">Available Points</p>
         </div>
 
         {/* Earn Points */}
