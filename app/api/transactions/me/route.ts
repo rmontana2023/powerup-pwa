@@ -4,7 +4,23 @@ import { connectDB } from "@/lib/db";
 import { Transaction } from "@/models/Transaction";
 import { Redemption } from "@/models/Redemption";
 import Voucher from "@/models/Voucher";
+// 1️⃣ Define types for lean() results
+interface TxDoc {
+  _id: any;
+  taggedAt: string;
+  pointsEarned: number;
+  liters: number;
+  amount: number;
+  stationId?: { name: string };
+}
 
+interface RdDoc {
+  _id: any;
+  createdAt: string;
+  points: number;
+  description?: string;
+  stationId?: string;
+}
 export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
@@ -15,22 +31,16 @@ export async function GET(req: Request) {
 
     await connectDB();
 
-    // 1️⃣ Fetch transactions
-    const transactions = await Transaction.find({ customerId }).sort({ taggedAt: -1 }).lean();
+    // 2️⃣ Fetch transactions + redemptions with explicit typing
+    const transactions = await Transaction.find({ customerId })
+      .sort({ taggedAt: -1 })
+      .lean<TxDoc[]>();
 
-    // 2️⃣ Fetch redemptions
-    const redemptions = await Redemption.find({ customerId }).sort({ createdAt: -1 }).lean();
-
-    // 3️⃣ Fetch locked vouchers (not redeemed yet)
-    const lockedVouchers = await Voucher.find({
-      customerId,
-      redeemed: false,
-      pointsLocked: { $gt: 0 },
-    })
+    const redemptions = await Redemption.find({ customerId })
       .sort({ createdAt: -1 })
-      .lean();
+      .lean<RdDoc[]>();
 
-    // 4️⃣ Map to unified format
+    // 3️⃣ Map them safely
     const txMapped = transactions.map((t) => ({
       _id: t._id.toString(),
       type: "Transaction" as const,
@@ -45,22 +55,13 @@ export async function GET(req: Request) {
       _id: r._id.toString(),
       type: "Redemption" as const,
       date: r.createdAt,
-      points: -r.points, // negative because points were spent
+      points: -r.points,
       description: r.description || "Points redeemed",
       station: r.stationId || "Station",
     }));
 
-    const lockedMapped = lockedVouchers.map((v) => ({
-      _id: v._id.toString(),
-      type: "Locked" as const,
-      date: v.createdAt,
-      points: -v.pointsLocked, // negative to show “reserved”
-      description: `Locked for voucher ₱${v.amount}`,
-      station: "Pending",
-    }));
-
-    // 5️⃣ Merge and sort by date descending
-    const combined = [...txMapped, ...rdMapped, ...lockedMapped].sort(
+    // 4️⃣ Merge + sort
+    const combined = [...txMapped, ...rdMapped].sort(
       (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
     );
 
