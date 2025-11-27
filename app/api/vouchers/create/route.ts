@@ -52,8 +52,9 @@ export async function POST(req: Request) {
     await Redemption.create({
       customerId,
       points,
+      type: "locked",
       description: `Locked points for voucher worth ₱${amount}`,
-      stationId: stationId || "Manual-Admin",
+      stationId: stationId || "Manual Redemption",
       createdAt: new Date(),
     });
 

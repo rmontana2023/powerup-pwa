@@ -1,26 +1,19 @@
 "use client";
-import React, { useEffect, useRef, useState, useMemo } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import newlogo from "../../public/assets/logo/powerup-new-logo.png";
 import LayoutWithNav from "../components/LayoutWithNav";
-import SlideToRevealQR from "../components/SlideRevealQR";
+import newlogo from "../../public/assets/logo/powerup-new-logo.png";
 
 interface Transaction {
   _id: string;
-  liters: number;
-  amount: number;
-  pointsEarned: number;
-  taggedAt: string;
-  stationId?: { name: string };
-}
-
-interface Redemption {
-  _id: string;
-  description: string;
+  liters?: number;
+  amount?: number;
   points: number;
-  createdAt: string;
-  stationId?: string;
+  date: string;
+  type: "Transaction" | "Redemption" | "Locked";
+  description?: string;
+  station?: string;
 }
 
 interface User {
@@ -30,14 +23,45 @@ interface User {
   qrCode: string;
 }
 
+interface TransactionCardProps {
+  item: Transaction;
+}
+
+const TransactionCard: React.FC<TransactionCardProps> = ({ item }) => {
+  const color =
+    item.type === "Transaction" ? "green-400" : item.type === "Locked" ? "yellow-400" : "red-400";
+
+  return (
+    <div
+      className={`flex justify-between items-center p-3 rounded-xl border transition-all duration-200 border-${color}/20 bg-${color}/10 hover:bg-${color}/20`}
+    >
+      <div className="flex flex-col">
+        <span className={`text-sm font-semibold text-${color}`}>{item.type}</span>
+        <span className="text-xs text-gray-300">
+          {item.type === "Transaction"
+            ? `${item.liters ?? 0}L • ₱${item.amount ?? 0}`
+            : item.description ?? "Points redeemed"}
+        </span>
+        <span className="text-[11px] text-gray-500">{new Date(item.date).toLocaleString()}</span>
+      </div>
+      <div className="text-right">
+        <span className={`block text-sm font-bold text-${color}`}>
+          {item.points >= 0 ? `+${item.points}` : item.points} pts
+        </span>
+        <span className="text-[11px] text-gray-400">{item.station || "Station"}</span>
+      </div>
+    </div>
+  );
+};
+
 export default function TransactionsPage() {
   const [user, setUser] = useState<User | null>(null);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [redemptions, setRedemptions] = useState<Redemption[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("all");
   const router = useRouter();
 
+  // Fetch logged-in user
   useEffect(() => {
     async function fetchUser() {
       const res = await fetch("/api/auth/me");
@@ -51,6 +75,7 @@ export default function TransactionsPage() {
     fetchUser();
   }, [router]);
 
+  // Fetch transactions + redemptions + locked points
   useEffect(() => {
     async function fetchData() {
       try {
@@ -58,51 +83,23 @@ export default function TransactionsPage() {
           localStorage.getItem("customerId") || sessionStorage.getItem("customerId");
         if (!customerId) return;
 
-        const [txRes, rdRes] = await Promise.all([
-          fetch(`/api/transactions/me?customerId=${customerId}`),
-          fetch(`/api/redemptions/me?customerId=${customerId}`),
-        ]);
+        const res = await fetch(`/api/transactions/me?customerId=${customerId}`);
+        const data = await res.json();
 
-        const txData = await txRes.json();
-        const rdData = await rdRes.json();
-
-        setTransactions(txData.transactions || []);
-        setRedemptions(rdData.redemptions || []);
+        // Assume backend returns merged array with type: Transaction | Redemption | Locked
+        setTransactions(data.transactions || []);
       } catch (err) {
         console.error("Error loading data:", err);
       } finally {
         setLoading(false);
       }
     }
-
     fetchData();
   }, []);
 
-  // Combine transactions + redemptions
-  const combined = useMemo(() => {
-    return [
-      ...transactions.map((t) => ({
-        _id: t._id,
-        type: "Transaction",
-        date: t.taggedAt,
-        details: `${t.liters}L • ₱${t.amount}`,
-        points: `+${t.pointsEarned} pts`,
-        station: t.stationId?.name || "Station",
-      })),
-      ...redemptions.map((r) => ({
-        _id: r._id,
-        type: "Redemption",
-        date: r.createdAt,
-        details: r.description || "Points redeemed",
-        points: `-${r.points} pts`,
-        station: r.stationId || "Station",
-      })),
-    ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-  }, [transactions, redemptions]);
-
-  // ⏳ Filter logic
+  // Filter transactions by date
   const filtered = useMemo(() => {
-    if (filter === "all") return combined;
+    if (filter === "all") return transactions;
 
     const now = new Date();
     let cutoff: Date | null = null;
@@ -111,8 +108,8 @@ export default function TransactionsPage() {
       case "yesterday":
         cutoff = new Date(now);
         cutoff.setDate(now.getDate() - 1);
-        return combined.filter(
-          (item) => new Date(item.date).toDateString() === cutoff!.toDateString()
+        return transactions.filter(
+          (t) => new Date(t.date).toDateString() === cutoff!.toDateString()
         );
       case "3days":
         cutoff = new Date(now);
@@ -128,8 +125,23 @@ export default function TransactionsPage() {
         break;
     }
 
-    return combined.filter((item) => new Date(item.date) >= cutoff!);
-  }, [combined, filter]);
+    return transactions.filter((t) => new Date(t.date) >= cutoff!);
+  }, [transactions, filter]);
+
+  // Request full history via email
+  const requestFullHistory = async () => {
+    if (!user?.email) return alert("No email found.");
+    const customerId = localStorage.getItem("customerId") || sessionStorage.getItem("customerId");
+    if (!customerId) return;
+
+    const res = await fetch(
+      `/api/transactions/me?customerId=${customerId}&export=true&email=${encodeURIComponent(
+        user.email
+      )}`
+    );
+    const data = await res.json();
+    alert(data.message || "Request sent successfully!");
+  };
 
   return (
     <LayoutWithNav user={user}>
@@ -139,12 +151,10 @@ export default function TransactionsPage() {
           <Image src={newlogo} alt="PowerUp Rewards" width={160} height={50} priority />
         </div>
 
-        {/* Transaction Card */}
+        {/* Transaction History */}
         <div className="w-full max-w-md bg-white/10 backdrop-blur-lg border border-white/10 rounded-3xl shadow-lg p-5 mb-5">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-lg font-semibold text-[var(--accent)]">Transaction History</h2>
-
-            {/* 🔽 Filter Dropdown */}
             <select
               value={filter}
               onChange={(e) => setFilter(e.target.value)}
@@ -165,54 +175,15 @@ export default function TransactionsPage() {
           ) : (
             <div className="space-y-3 max-h-[65vh] overflow-y-auto">
               {filtered.map((item) => (
-                <div
-                  key={item._id}
-                  className={`flex justify-between items-center p-3 rounded-xl border transition-all duration-200 ${
-                    item.type === "Transaction"
-                      ? "border-[var(--accent)]/20 bg-[var(--accent)]/10 hover:bg-[var(--accent)]/20"
-                      : "border-red-400/20 bg-red-400/10 hover:bg-red-400/20"
-                  }`}
-                >
-                  <div className="flex flex-col">
-                    <span
-                      className={`text-sm font-semibold ${
-                        item.type === "Transaction" ? "text-[var(--accent)]" : "text-red-400"
-                      }`}
-                    >
-                      {item.type}
-                    </span>
-                    <span className="text-xs text-gray-300">{item.details}</span>
-                    <span className="text-[11px] text-gray-500">
-                      {new Date(item.date).toLocaleString()}
-                    </span>
-                  </div>
-                  <div className="text-right">
-                    <span
-                      className={`block text-sm font-bold ${
-                        item.type === "Transaction" ? "text-green-400" : "text-red-400"
-                      }`}
-                    >
-                      {item.points}
-                    </span>
-                    <span className="text-[11px] text-gray-400">{item.station}</span>
-                  </div>
-                </div>
+                <TransactionCard key={item._id} item={item} />
               ))}
             </div>
           )}
+
           {filtered.length >= 100 && (
             <div className="text-center mt-4">
               <button
-                onClick={async () => {
-                  if (!user?.email) return alert("No email found.");
-                  const res = await fetch(
-                    `/api/transactions/me?customerId=${
-                      user._id
-                    }&export=true&email=${encodeURIComponent(user.email)}`
-                  );
-                  const data = await res.json();
-                  alert(data.message || "Request sent successfully!");
-                }}
+                onClick={requestFullHistory}
                 className="mt-2 text-sm bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white px-4 py-2 rounded-xl transition-all"
               >
                 Request Full History via Email
@@ -220,8 +191,6 @@ export default function TransactionsPage() {
             </div>
           )}
         </div>
-
-        {/* {user && <SlideToRevealQR user={user} />} */}
       </main>
     </LayoutWithNav>
   );

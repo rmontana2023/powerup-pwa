@@ -1,6 +1,6 @@
 "use client";
-import React from "react";
-import { useState } from "react";
+import React, { useState } from "react";
+
 interface VoucherTier {
   points: number;
   peso: number;
@@ -8,11 +8,25 @@ interface VoucherTier {
 
 interface VoucherListProps {
   tiers: VoucherTier[];
-  onRedeem: (points: number, peso: number) => void;
-  totalPoints: number; // ✅ added prop
+  onRedeem: (points: number, peso: number) => Promise<void> | void;
+  totalPoints: number;
 }
 
 export default function VoucherList({ tiers, onRedeem, totalPoints }: VoucherListProps) {
+  const [loadingIndex, setLoadingIndex] = useState<number | null>(null);
+
+  const handleRedeemClick = async (idx: number, points: number, peso: number) => {
+    setLoadingIndex(idx);
+
+    try {
+      await onRedeem(points, peso); // call parent handler
+    } catch (error) {
+      console.error("Redeem error:", error);
+    } finally {
+      setLoadingIndex(null); // reset button loading
+    }
+  };
+
   return (
     <div className="w-full max-w-md mt-8">
       <h3 className="text-lg font-semibold mb-4 text-center text-[var(--text-accent)]">
@@ -21,13 +35,14 @@ export default function VoucherList({ tiers, onRedeem, totalPoints }: VoucherLis
 
       <div className="space-y-4">
         {tiers.map((tier, idx) => {
-          const canRedeem = totalPoints >= tier.points; // ✅ check if user has enough points
+          const canRedeem = totalPoints >= tier.points;
+          const isLoading = loadingIndex === idx;
 
           return (
             <div
               key={idx}
               className={`relative flex flex-col sm:flex-row sm:items-center justify-between 
-                bg-white/10 backdrop-blur-lg border border-white/10 text-white p-4 rounded-2xl shadow-[0_3px_10px_rgba(0,0,0,0.3)] 
+                bg-white/10 backdrop-blur-lg border border-white/10 text-white p-4 rounded-2xl shadow-[0_3px_10px_rgba(0,0,0,0.3)]
                 transition-transform ${
                   canRedeem ? "hover:scale-[1.02]" : "opacity-40 cursor-not-allowed"
                 }`}
@@ -62,14 +77,16 @@ export default function VoucherList({ tiers, onRedeem, totalPoints }: VoucherLis
 
               {/* Redeem Button */}
               <button
-                disabled={!canRedeem}
-                onClick={() => canRedeem && onRedeem(tier.points, tier.peso)}
+                disabled={!canRedeem || isLoading}
+                onClick={() => canRedeem && handleRedeemClick(idx, tier.points, tier.peso)}
                 className={`text-white text-xs sm:text-sm font-semibold px-4 py-2 rounded-full transition
                   ${
-                    canRedeem ? "bg-[#e66a00] hover:bg-[#c45900]" : "bg-gray-600 cursor-not-allowed"
+                    canRedeem && !isLoading
+                      ? "bg-[#e66a00] hover:bg-[#c45900]"
+                      : "bg-gray-600 cursor-not-allowed"
                   }`}
               >
-                {canRedeem ? "REDEEM" : "INSUFFICIENT"}
+                {isLoading ? "Processing..." : canRedeem ? "REDEEM" : "INSUFFICIENT"}
               </button>
             </div>
           );

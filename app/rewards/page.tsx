@@ -116,42 +116,51 @@ export default function RewardsPage() {
       });
 
       const data = await res.json();
-      if (data.success) {
-        Swal.fire({
-          title: "OTP Sent! 📩",
-          text: "Check your email for the 6-digit code.",
-          icon: "success",
-          background: "#1c1c1c",
-          color: "#fff",
-          confirmButtonColor: "#e66a00",
-          confirmButtonText: "Got it",
-          customClass: { popup: "rounded-2xl" },
-        });
 
-        setOtpModalOpen(true);
-      } else {
+      // Backend cooldown
+      if (data.cooldown) {
         Swal.fire({
-          title: "Not enough points 😢",
-          text: "You don’t have enough points to redeem this voucher.",
+          title: "Slow down ⏳",
+          text: `Please wait ${data.cooldown} seconds before requesting a new OTP.`,
           icon: "warning",
           background: "#1c1c1c",
           color: "#fff",
           confirmButtonColor: "#e66a00",
-          confirmButtonText: "Okay",
-          customClass: { popup: "rounded-2xl" },
         });
+        return;
       }
+
+      if (!data.success) {
+        Swal.fire({
+          title: "Failed 😢",
+          text: data.error || "Unable to send OTP.",
+          icon: "error",
+          background: "#1c1c1c",
+          color: "#fff",
+          confirmButtonColor: "#e66a00",
+        });
+        return;
+      }
+
+      Swal.fire({
+        title: "OTP Sent! 📩",
+        text: "Check your email for the 6-digit code.",
+        icon: "success",
+        background: "#1c1c1c",
+        color: "#fff",
+        confirmButtonColor: "#e66a00",
+      });
+      setEnteredOTP(""); // reset input field
+      setOtpModalOpen(true);
     } catch (err) {
       console.error(err);
       Swal.fire({
         title: "Error 😢",
         text: "Error sending OTP",
-        icon: "warning",
+        icon: "error",
         background: "#1c1c1c",
         color: "#fff",
         confirmButtonColor: "#e66a00",
-        confirmButtonText: "Okay",
-        customClass: { popup: "rounded-2xl" },
       });
     }
   };
@@ -310,6 +319,8 @@ export default function RewardsPage() {
               <input
                 type="text"
                 value={enteredOTP}
+                inputMode="numeric"
+                pattern="[0-9]*"
                 onChange={(e) => setEnteredOTP(e.target.value)}
                 maxLength={6}
                 placeholder="Enter OTP"

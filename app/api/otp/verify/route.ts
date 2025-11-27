@@ -36,6 +36,10 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: false, error: "Invalid OTP" });
     }
 
+    if (String(user.otp).trim() !== String(otp).trim()) {
+      return NextResponse.json({ success: false, error: "Invalid OTP" });
+    }
+
     // OTP matched — clear OTP + mark verified
     user.otp = undefined;
     user.otpExpires = undefined;

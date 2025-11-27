@@ -21,6 +21,7 @@ const customerSchema = new mongoose.Schema(
     isVerified: { type: Boolean, default: false }, // ✅ new field
     resetToken: { type: String }, // 🔑 password reset token
     resetTokenExpires: { type: Date }, // ⏱ token expiration
+    lastOtpRequest: { type: Date, default: null },
   },
   { timestamps: true }
 );

@@ -1,73 +1,72 @@
+// File: /app/api/transactions/me/route.ts
 import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/db";
 import { Transaction } from "@/models/Transaction";
-import nodemailer from "nodemailer";
+import { Redemption } from "@/models/Redemption";
+import Voucher from "@/models/Voucher";
 
 export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
     const customerId = searchParams.get("customerId");
-    const exportAll = searchParams.get("export") === "true"; // export mode toggle
-    const email = searchParams.get("email"); // optional email param
-
     if (!customerId) {
       return NextResponse.json({ error: "Missing customerId" }, { status: 400 });
     }
 
     await connectDB();
 
-    // Limit data to 100 for regular fetch
-    const transactions = await Transaction.find({ customerId })
-      .sort({ taggedAt: -1 })
-      .limit(exportAll ? 0 : 100) // limit only when not exporting all
+    // 1️⃣ Fetch transactions
+    const transactions = await Transaction.find({ customerId }).sort({ taggedAt: -1 }).lean();
+
+    // 2️⃣ Fetch redemptions
+    const redemptions = await Redemption.find({ customerId }).sort({ createdAt: -1 }).lean();
+
+    // 3️⃣ Fetch locked vouchers (not redeemed yet)
+    const lockedVouchers = await Voucher.find({
+      customerId,
+      redeemed: false,
+      pointsLocked: { $gt: 0 },
+    })
+      .sort({ createdAt: -1 })
       .lean();
 
-    // If user requests full export and provides email
-    if (exportAll && email) {
-      // Fetch all transactions for export
-      const allTransactions = await Transaction.find({ customerId }).sort({ taggedAt: -1 }).lean();
+    // 4️⃣ Map to unified format
+    const txMapped = transactions.map((t) => ({
+      _id: t._id.toString(),
+      type: "Transaction" as const,
+      date: t.taggedAt,
+      points: t.pointsEarned,
+      liters: t.liters,
+      amount: t.amount,
+      station: t.stationId?.name || "Station",
+    }));
 
-      // Format CSV
-      const csv = [
-        "Date,Station,Liters,Amount,Points",
-        ...allTransactions.map(
-          (t) =>
-            `${new Date(t.taggedAt).toLocaleString()},${t.stationId?.name || ""},${t.liters},${
-              t.amount
-            },${t.pointsEarned}`
-        ),
-      ].join("\n");
+    const rdMapped = redemptions.map((r) => ({
+      _id: r._id.toString(),
+      type: "Redemption" as const,
+      date: r.createdAt,
+      points: -r.points, // negative because points were spent
+      description: r.description || "Points redeemed",
+      station: r.stationId || "Station",
+    }));
 
-      // Send CSV via email
-      const transporter = nodemailer.createTransport({
-        service: "gmail",
-        auth: {
-          user: process.env.EMAIL_USER,
-          pass: process.env.EMAIL_PASS,
-        },
-      });
+    const lockedMapped = lockedVouchers.map((v) => ({
+      _id: v._id.toString(),
+      type: "Locked" as const,
+      date: v.createdAt,
+      points: -v.pointsLocked, // negative to show “reserved”
+      description: `Locked for voucher ₱${v.amount}`,
+      station: "Pending",
+    }));
 
-      await transporter.sendMail({
-        from: `"PowerUp Rewards" <${process.env.EMAIL_USER}>`,
-        to: email,
-        subject: "Your Full Transaction History",
-        text: "Attached is your full transaction history in CSV format.",
-        attachments: [
-          {
-            filename: "transactions.csv",
-            content: csv,
-          },
-        ],
-      });
+    // 5️⃣ Merge and sort by date descending
+    const combined = [...txMapped, ...rdMapped, ...lockedMapped].sort(
+      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+    );
 
-      return NextResponse.json({
-        message: "Full transaction history sent to your email.",
-      });
-    }
-
-    return NextResponse.json({ transactions });
-  } catch (error) {
-    console.error("Error fetching transactions:", error);
+    return NextResponse.json({ transactions: combined });
+  } catch (err) {
+    console.error("Error fetching transactions:", err);
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }

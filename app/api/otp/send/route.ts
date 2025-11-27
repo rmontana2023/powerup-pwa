@@ -3,6 +3,8 @@ import nodemailer from "nodemailer";
 import { connectDB } from "@/lib/db";
 import { Customer } from "@/models/Customer";
 
+const OTP_COOLDOWN = 60; // seconds
+
 export async function POST(req: Request) {
   try {
     await connectDB();
@@ -18,14 +20,41 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: false, error: "Email not found" });
     }
 
-    // Generate OTP
+    // 🌐 CHECK COOLDOWN
+    if (user.lastOtpRequest) {
+      const elapsed = (Date.now() - new Date(user.lastOtpRequest).getTime()) / 1000;
+
+      if (elapsed < OTP_COOLDOWN) {
+        const remaining = Math.ceil(OTP_COOLDOWN - elapsed);
+        return NextResponse.json({
+          success: false,
+          cooldown: remaining,
+          error: `Please wait ${remaining}s before requesting another OTP.`,
+        });
+      }
+    }
+
+    // If existing OTP not expired, do not generate a new one
+    if (user.otp && user.otpExpires > new Date()) {
+      // Still update cooldown timestamp
+      user.lastOtpRequest = new Date();
+      await user.save();
+
+      return NextResponse.json({
+        success: true,
+        message: "OTP already sent",
+      });
+    }
+
+    // 🔐 Generate NEW OTP
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
     user.otp = otp;
-    user.otpExpires = new Date(Date.now() + 5 * 60 * 1000); // valid for 5 minutes
+    user.otpExpires = new Date(Date.now() + 5 * 60 * 1000);
+    user.lastOtpRequest = new Date(); // <-- ADD THIS
     await user.save();
 
-    // Email Transporter
+    // 📧 Email Transporter
     const transporter = nodemailer.createTransport({
       service: "gmail",
       auth: {
