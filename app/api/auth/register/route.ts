@@ -6,10 +6,31 @@ import { sendEmailOtp } from "@/lib/sendEmailOtp"; // move the sendEmailOtp func
 
 export async function POST(req: Request) {
   try {
-    const { name, email, phone, address, password, accountType } = await req.json();
+    const {
+      firstName,
+      middleName,
+      lastName,
+      email,
+      phone,
+      address,
+      password,
+      accountType,
+      birthDate,
+    } = await req.json();
+    console.log("🚀 ~ POST ~ lastName:", lastName);
+    console.log("🚀 ~ POST ~ middleName:", middleName);
+    console.log("🚀 ~ POST ~ firstName:", firstName);
     await connectDB();
 
-    if (!name || !email || !password || !accountType) {
+    if (
+      !firstName ||
+      !middleName ||
+      !lastName ||
+      !email ||
+      !password ||
+      !accountType ||
+      !birthDate
+    ) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
@@ -27,7 +48,10 @@ export async function POST(req: Request) {
 
     // 🧑‍💻 Create unverified user
     const customer = await Customer.create({
-      name,
+      firstName,
+      middleName,
+      lastName,
+      birthDate,
       email,
       phone,
       address,

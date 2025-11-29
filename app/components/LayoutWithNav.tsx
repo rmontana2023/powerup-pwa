@@ -9,8 +9,8 @@ const sidebarMenu = [
   {
     title: "MEMBER PROFILE",
     subItems: [
-      { title: "Personal Details", href: "/" },
-      { title: "Additional Information", href: "/" },
+      { title: "Personal Details", href: "/profile/personal" },
+      { title: "Additional Information", href: "/profile/additional" },
     ],
   },
   {
@@ -158,6 +158,8 @@ export default function LayoutWithNav({
               <button
                 onClick={() => {
                   localStorage.removeItem("user");
+                  localStorage.removeItem("customerId");
+                  localStorage.removeItem("token");
                   router.push("/login");
                 }}
                 className="mt-4 w-full bg-[var(--accent)] hover:bg-[var(--accent-dark)] text-black font-semibold px-6 py-2 rounded-lg transition-all"

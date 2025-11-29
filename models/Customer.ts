@@ -3,10 +3,18 @@ import bcrypt from "bcryptjs";
 
 const customerSchema = new mongoose.Schema(
   {
-    name: { type: String, required: true },
+    firstName: { type: String, required: true },
+    middleName: { type: String, required: true },
+    lastName: { type: String, required: true },
     email: { type: String, required: true, unique: true },
     phone: { type: String, required: true },
     address: { type: String },
+    birthDate: { type: Date },
+    province: { type: String },
+    city: { type: String },
+    barangay: { type: String },
+    street: { type: String },
+    zipCode: { type: String },
     password: { type: String, required: true },
     qrCode: { type: String, unique: true, required: true },
     totalPoints: { type: Number, default: 0 },

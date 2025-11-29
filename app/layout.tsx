@@ -7,8 +7,8 @@ export const metadata: Metadata = {
   description: "Track your fuel points and rewards.",
   manifest: "/manifest.json",
   icons: {
-    icon: "/icons/icon-192x192.png",
-    apple: "/icons/icon-512x512.png",
+    icon: "/icons/app_icon.png",
+    apple: "/icons/app_icon.png",
   },
 };
 

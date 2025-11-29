@@ -27,6 +27,9 @@ const REWARD_TIERS: Record<string, { points: number; peso: number }[]> = {
 interface User {
   _id: string;
   name: string;
+  firstName: string;
+  middleName: string;
+  lastName: string;
   email: string;
   qrCode: string;
   accountType: string;
@@ -57,6 +60,8 @@ export default function DashboardPage() {
   const [voucher, setVoucher] = useState<Voucher | null>(null);
   const [loadingVoucher, setLoadingVoucher] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [lockedPoints, setLockedPoints] = useState(0);
+  const [totalPoints, setTotalPoints] = useState(0);
 
   useEffect(() => {
     async function fetchUser() {
@@ -67,6 +72,18 @@ export default function DashboardPage() {
       }
       const data = await res.json();
       setUser(data.user);
+      const totalPoints = data.user?.totalPoints ?? 0;
+      // fetch unredeemed vouchers
+      const resVouchers = await fetch("/api/vouchers?customerId=" + data.user._id);
+      const dataVouchers = await resVouchers.json();
+      const unredeemed = dataVouchers.vouchers.filter((v: any) => !v.redeemed);
+      console.log("🚀 ~ fetchUser ~ unredeemed:", unredeemed);
+      const sumLocked = unredeemed.reduce((sum: number, v: any) => sum + (v.pointsLocked || 0), 0);
+      console.log("🚀 ~ fetchUser ~ sumLocked:", sumLocked);
+
+      setUser(data.user);
+      setLockedPoints(sumLocked);
+      setTotalPoints(totalPoints);
       setLoading(false);
     }
     fetchUser();
@@ -195,7 +212,10 @@ export default function DashboardPage() {
         {/* ---------- USER INFO CARD ---------- */}
         <div className="w-full max-w-md relative bg-[var(--card-bg)] backdrop-blur-xl border border-[var(--border-color)] rounded-3xl shadow-lg p-6 mb-6">
           <p className="text-2xl font-semibold tracking-tight">
-            Good day, <span className="text-[var(--accent)]">{user.name}</span>
+            Good day,{" "}
+            <span className="text-[var(--accent)]">
+              {user.name || `${user.firstName} ${user.middleName} ${user.lastName}`}
+            </span>
           </p>
 
           {/* QR Code + Copy Button */}
@@ -239,7 +259,7 @@ export default function DashboardPage() {
         {/* ---------- TOTAL POINTS CARD ---------- */}
         <div className="w-full max-w-md bg-[var(--card-bg)] backdrop-blur-xl border border-[var(--border-color)] rounded-3xl shadow-md p-6 mb-6 flex flex-col items-center text-center">
           <p className="text-6xl font-extrabold text-[var(--accent)] tracking-tight drop-shadow-sm">
-            {user.totalPoints}
+            {(totalPoints - lockedPoints).toFixed(2)}
           </p>
           <p className="text-lg font-medium text-[var(--text-muted)] mt-2">Available Points</p>
         </div>

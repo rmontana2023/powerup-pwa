@@ -278,7 +278,7 @@ export default function RewardsPage() {
           ) : (
             <>
               <h2 className="text-3xl font-bold text-[var(--accent)]">
-                {totalPoints - lockedPoints} points
+                {(totalPoints - lockedPoints).toFixed(2)}
               </h2>
             </>
           )}
