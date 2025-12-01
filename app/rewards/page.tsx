@@ -47,7 +47,7 @@ export default function RewardsPage() {
   const [otpModalOpen, setOtpModalOpen] = useState(false);
   const [enteredOTP, setEnteredOTP] = useState("");
   const [generatedOTP, setGeneratedOTP] = useState("");
-  const [redeemTimer, setRedeemTimer] = useState(30);
+  // const [redeemTimer, setRedeemTimer] = useState(30);
   const redeemTimerRef = useRef<NodeJS.Timeout | null>(null);
   const [qrOpen, setQrOpen] = useState(false);
   const [selectedReward, setSelectedReward] = useState<{ points: number; peso: number } | null>(
@@ -81,27 +81,27 @@ export default function RewardsPage() {
     }
     fetchUser();
   }, [router]);
-  useEffect(() => {
-    if (qrOpen) {
-      setRedeemTimer(30);
-      redeemTimerRef.current = setInterval(() => {
-        setRedeemTimer((prev) => {
-          if (prev <= 1) {
-            clearInterval(redeemTimerRef.current!);
-            setQrOpen(false);
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-    } else {
-      if (redeemTimerRef.current) clearInterval(redeemTimerRef.current);
-      setRedeemTimer(30);
-    }
-    return () => {
-      if (redeemTimerRef.current) clearInterval(redeemTimerRef.current);
-    };
-  }, [qrOpen]);
+  // useEffect(() => {
+  //   if (qrOpen) {
+  //     setRedeemTimer(30);
+  //     redeemTimerRef.current = setInterval(() => {
+  //       setRedeemTimer((prev) => {
+  //         if (prev <= 1) {
+  //           clearInterval(redeemTimerRef.current!);
+  //           setQrOpen(false);
+  //           return 0;
+  //         }
+  //         return prev - 1;
+  //       });
+  //     }, 1000);
+  //   } else {
+  //     if (redeemTimerRef.current) clearInterval(redeemTimerRef.current);
+  //     setRedeemTimer(30);
+  //   }
+  //   return () => {
+  //     if (redeemTimerRef.current) clearInterval(redeemTimerRef.current);
+  //   };
+  // }, [qrOpen]);
   const handleRedeem = async (points: number, peso: number) => {
     if (!user) return alert("Please log in first.");
     if (totalPoints < points) return alert("Insufficient points to redeem this voucher.");
@@ -420,7 +420,7 @@ export default function RewardsPage() {
               <p className="text-sm font-medium text-white">{user?.name}</p>
 
               {/* Timer */}
-              <p className="text-sm font-semibold text-orange-400">Expires in: {redeemTimer}s</p>
+              {/* <p className="text-sm font-semibold text-orange-400">Expires in: {redeemTimer}s</p> */}
 
               {/* Divider */}
               <div className="border-t border-white/20 my-4" />
