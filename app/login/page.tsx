@@ -7,7 +7,8 @@ import { Eye, EyeOff } from "lucide-react";
 
 export default function LoginPage() {
   const router = useRouter();
-  const [email, setEmail] = useState("");
+  // const [email, setEmail] = useState("");
+  const [identifier, setIdentifier] = useState(""); // email OR phone
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
 
@@ -25,7 +26,7 @@ export default function LoginPage() {
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ identifier, password }),
         credentials: "include",
       });
 
@@ -91,10 +92,10 @@ export default function LoginPage() {
         {/* Form */}
         <form className="space-y-5" onSubmit={handleLogin}>
           <input
-            type="email"
-            placeholder="Email Address"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            type="text"
+            placeholder="Email or Mobile Number"
+            value={identifier}
+            onChange={(e) => setIdentifier(e.target.value)}
             className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
             required
           />

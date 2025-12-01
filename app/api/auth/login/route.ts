@@ -8,22 +8,29 @@ import { User } from "@/models/User";
 
 export async function POST(req: Request) {
   try {
-    const { email, password } = await req.json();
+    const { identifier, password } = await req.json();
     await connectDB();
 
     // 1️⃣ Try finding admin in User collection first
-    let user = await User.findOne({ email });
+    let user;
     let role = "admin";
 
-    // 2️⃣ If not found, try customer
+    // 1️⃣ ADMIN LOGIN → email only
+    if (identifier.includes("@")) {
+      user = await User.findOne({ email: identifier });
+    }
+
+    // 2️⃣ CUSTOMER LOGIN → email or phone
     if (!user) {
-      user = await Customer.findOne({ email });
+      user = await Customer.findOne({
+        $or: [{ email: identifier }, { phone: identifier }],
+      });
       role = "customer";
     }
 
-    // 3️⃣ If still not found
+    // 3️⃣ No user found
     if (!user) {
-      return NextResponse.json({ error: "Invalid email or password" }, { status: 401 });
+      return NextResponse.json({ error: "Invalid email/phone or password" }, { status: 401 });
     }
 
     // 4️⃣ Compare passwords
@@ -55,6 +62,7 @@ export async function POST(req: Request) {
         _id: user._id,
         name: user.name,
         email: user.email,
+        phonr: user.phone,
         role,
         ...(role === "customer"
           ? {
