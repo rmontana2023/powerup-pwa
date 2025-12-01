@@ -105,6 +105,30 @@ export default function RewardsPage() {
   const handleRedeem = async (points: number, peso: number) => {
     if (!user) return alert("Please log in first.");
     if (totalPoints < points) return alert("Insufficient points to redeem this voucher.");
+    // ⛔ STOP — ask for confirmation first
+    const confirm = await Swal.fire({
+      title: "Generate Voucher?",
+      html: `
+      <div style="font-size:14px">
+        You are about to redeem 
+        <b>${points} points</b> for 
+        <b>₱${peso}</b> voucher.<br/><br/>
+        This action cannot be undone.
+      </div>
+    `,
+      icon: "question",
+      showCancelButton: true,
+      confirmButtonText: "Yes, continue",
+      cancelButtonText: "Cancel",
+      background: "#1c1c1c",
+      color: "#fff",
+      confirmButtonColor: "#e66a00",
+      cancelButtonColor: "#444",
+      customClass: { popup: "rounded-2xl" },
+    });
+
+    // ❌ If cancelled, stop process
+    if (!confirm.isConfirmed) return;
 
     setSelectedReward({ points, peso });
 
