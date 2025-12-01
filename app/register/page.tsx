@@ -8,7 +8,7 @@ import Swal from "sweetalert2";
 export default function RegisterPage() {
   const [form, setForm] = useState({
     firstName: "",
-    // middleName: "",
+    middleName: "",
     lastName: "",
     birthDate: "",
     email: "",
