@@ -397,6 +397,14 @@ export default function RegisterPage() {
             >
               {loading ? "Creating Account..." : "Register"}
             </button>
+            <div className="text-center mt-4">
+              <p className="text-sm text-gray-600">
+                Already have an account?{" "}
+                <a href="/login" className="text-orange-500 font-semibold hover:underline">
+                  Login
+                </a>
+              </p>
+            </div>
           </form>
         ) : (
           // OTP Verification Form
