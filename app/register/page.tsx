@@ -8,7 +8,7 @@ import Swal from "sweetalert2";
 export default function RegisterPage() {
   const [form, setForm] = useState({
     firstName: "",
-    middleName: "",
+    // middleName: "",
     lastName: "",
     birthDate: "",
     email: "",
@@ -219,7 +219,6 @@ export default function RegisterPage() {
               value={form.middleName}
               onChange={(e) => setForm({ ...form, middleName: e.target.value })}
               className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
-              required
             />
             <input
               type="text"
@@ -299,7 +298,13 @@ export default function RegisterPage() {
 
             <div className="mt-4">
               <label className="flex items-start gap-2">
-                <input type="checkbox" required className="mt-1" />
+                <input
+                  type="checkbox"
+                  checked={form.agreeTerms}
+                  onChange={(e) => setForm({ ...form, agreeTerms: e.target.checked })}
+                  required
+                  className="mt-1"
+                />
                 <span className="text-sm text-gray-700">
                   Yes, I understand and agree to the{" "}
                   <button

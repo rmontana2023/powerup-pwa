@@ -4,7 +4,7 @@ import bcrypt from "bcryptjs";
 const customerSchema = new mongoose.Schema(
   {
     firstName: { type: String, required: true },
-    middleName: { type: String, required: true },
+    middleName: { type: String },
     lastName: { type: String, required: true },
     email: { type: String, required: true, unique: true },
     phone: { type: String, required: true },

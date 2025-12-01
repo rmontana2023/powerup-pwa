@@ -214,7 +214,7 @@ export default function DashboardPage() {
           <p className="text-2xl font-semibold tracking-tight">
             Good day,{" "}
             <span className="text-[var(--accent)]">
-              {user.name || `${user.firstName} ${user.middleName} ${user.lastName}`}
+              {user.name || `${user.firstName} ${user.lastName}`}
             </span>
           </p>
 

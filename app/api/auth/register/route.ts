@@ -22,15 +22,7 @@ export async function POST(req: Request) {
     console.log("🚀 ~ POST ~ firstName:", firstName);
     await connectDB();
 
-    if (
-      !firstName ||
-      !middleName ||
-      !lastName ||
-      !email ||
-      !password ||
-      !accountType ||
-      !birthDate
-    ) {
+    if (!firstName || !lastName || !email || !password || !accountType || !birthDate) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
