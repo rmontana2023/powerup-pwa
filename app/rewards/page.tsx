@@ -431,7 +431,7 @@ export default function RewardsPage() {
               </p>
 
               {/* Buttons */}
-              <div className="flex justify-center gap-3 mt-5 z-10">
+              <div className="flex justify-center mt-6 z-10">
                 <button
                   onClick={async () => {
                     if (!voucherRef.current) return;
@@ -447,7 +447,7 @@ export default function RewardsPage() {
                       const blob = await response.blob();
                       const file = new File([blob], `${voucher.code}.png`, { type: blob.type });
 
-                      // Try mobile-friendly save/share
+                      // Mobile-friendly save
                       if (navigator.canShare && navigator.canShare({ files: [file] })) {
                         await navigator.share({
                           files: [file],
@@ -455,7 +455,7 @@ export default function RewardsPage() {
                           text: `Here’s my PowerUp voucher worth ₱${voucher.amount}. Code: ${voucher.code}`,
                         });
                       } else {
-                        // Fallback: normal download
+                        // fallback download
                         const link = document.createElement("a");
                         link.download = `${voucher.code}.png`;
                         link.href = dataUrl;
@@ -466,31 +466,9 @@ export default function RewardsPage() {
                       alert("Failed to download voucher. Please try again.");
                     }
                   }}
-                  className="bg-orange-500 hover:bg-orange-600 text-white text-sm px-4 py-2 rounded-lg shadow transition"
+                  className="w-full max-w-[200px] bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium px-5 py-2.5 rounded-xl shadow-md transition-all active:scale-[0.97]"
                 >
-                  Download
-                </button>
-
-                <button
-                  onClick={async () => {
-                    try {
-                      const shareData = {
-                        title: "PowerUp E-Voucher",
-                        text: `Here’s my PowerUp voucher worth ₱${voucher.amount}. Code: ${voucher.code}`,
-                        url: window.location.origin,
-                      };
-                      if (navigator.share) {
-                        await navigator.share(shareData);
-                      } else {
-                        alert("Sharing not supported on this device.");
-                      }
-                    } catch (err) {
-                      console.error("Share failed:", err);
-                    }
-                  }}
-                  className="bg-gray-700 hover:bg-gray-600 text-white text-sm px-4 py-2 rounded-lg shadow transition"
-                >
-                  Share
+                  Download Voucher
                 </button>
               </div>
             </div>
