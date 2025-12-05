@@ -1,7 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import AppWrapper from "./components/AppWrapper";
-
 export const metadata: Metadata = {
   title: "PowerUp Rewards",
   description: "Track your fuel points and rewards.",

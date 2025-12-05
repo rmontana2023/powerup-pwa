@@ -94,3 +94,7 @@ button {
     @apply bg-background text-foreground;
   }
 }
+.will-change-transform {
+  will-change: transform;
+  transform: translateY(0px);
+}
