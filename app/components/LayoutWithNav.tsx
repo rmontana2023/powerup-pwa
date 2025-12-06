@@ -28,10 +28,9 @@ const sidebarMenu = [
   {
     title: "SETTINGS",
     subItems: [
-      {
-        title: "Account Security (Change Password and Mobile No)",
-        href: "/",
-      },
+      { title: "Change Mobile Number", href: "/settings/change-mobile" },
+      { title: "Change Email Address", href: "/settings/change-email" },
+      { title: "Change Password", href: "/settings/change-password" },
     ],
   },
 ];
@@ -92,7 +91,6 @@ export default function LayoutWithNav({
   const toggleMenu = (title: string) => {
     setOpenMenus((prev) => ({ ...prev, [title]: !prev[title] }));
   };
-
   return (
     <>
       {/* Page content */}
@@ -106,6 +104,7 @@ export default function LayoutWithNav({
             onClick={() => setSidebarOpen(false)}
           />
           <div className="fixed top-0 right-0 h-full w-64 bg-[#111] text-[#ededed] border-l border-[#222] z-50 shadow-lg transition-transform duration-300 overflow-y-auto">
+            {/* Header */}
             <div className="flex items-center justify-between p-4 border-b border-[#222]">
               <p className="font-semibold text-powerup-500">ACCOUNT</p>
               <button
@@ -116,6 +115,36 @@ export default function LayoutWithNav({
               </button>
             </div>
 
+            {/* ⭐ NEW — Customer Info Section */}
+            {user && (
+              <div
+                className="p-4 border-b border-[#222] flex items-center gap-3 hover:bg-[#1a1a1a] transition cursor-pointer"
+                onClick={() => {
+                  router.push("/profile/personal");
+                  setSidebarOpen(false);
+                }}
+              >
+                <div className="w-12 h-12 rounded-full bg-[#222] flex items-center justify-center text-powerup-500 font-bold text-lg">
+                  {user?.firstName?.charAt(0)?.toUpperCase() || "U"}
+                </div>
+
+                <div className="flex flex-col">
+                  <span className="text-sm font-semibold text-[#fafafa]">
+                    {user.name || `${user.firstName} ${user.lastName}` || "Guest User"}
+                  </span>
+                  <span className="text-xs text-gray-400">{user?.phone || "No number"}</span>
+                  {/* QR Code Icon + Code */}
+                  {user?.qrCode && (
+                    <div className="flex items-center gap-2">
+                      {/* QR Code String */}
+                      <span className="text-xs text-gray-400 break-all">{user.qrCode}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Menu Items */}
             <div className="p-4 flex flex-col gap-3">
               {sidebarMenu.map((item) => (
                 <div key={item.title}>
@@ -154,7 +183,7 @@ export default function LayoutWithNav({
                 </div>
               ))}
 
-              {/* Logout Button */}
+              {/* Logout */}
               <button
                 onClick={() => {
                   localStorage.removeItem("user");

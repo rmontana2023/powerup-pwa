@@ -41,7 +41,7 @@ export default function LoginPage() {
       if (data.user) {
         localStorage.setItem("user", JSON.stringify(data.user));
         localStorage.setItem("customerId", data.user._id || data.user.id);
-
+        localStorage.setItem("token", data.token); // store JWT
         // ✅ Redirect based on role
         if (data.user.role === "admin") {
           router.push("/admin/dashboard");

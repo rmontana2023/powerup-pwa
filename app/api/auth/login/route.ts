@@ -54,15 +54,27 @@ export async function POST(req: Request) {
       maxAge: 7 * 24 * 60 * 60,
     });
 
+    let fullName = "";
+
+    if (role === "admin") {
+      fullName = user.name; // Admin still has name field
+    } else {
+      // Customer → build from firstname + middlename + lastname
+      const first = user.firstName || "";
+      const middle = user.middleName ? ` ${user.middleName}` : "";
+      const last = user.lastName ? ` ${user.lastName}` : "";
+      fullName = `${first}${middle}${last}`.trim();
+    }
+    console.log("User logged in:", fullName);
     // 7️⃣ Send response based on role
     return NextResponse.json({
       success: true,
       token,
       user: {
         _id: user._id,
-        name: user.name,
+        name: fullName,
         email: user.email,
-        phonr: user.phone,
+        phone: user.phone,
         role,
         ...(role === "customer"
           ? {

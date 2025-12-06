@@ -1,7 +1,7 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import Image from "next/image";
 import LayoutWithNav from "@/app/components/LayoutWithNav";
+import Image from "next/image";
 import newlogo from "../../../public/assets/logo/powerup-new-logo.png";
 interface User {
   _id: string;
