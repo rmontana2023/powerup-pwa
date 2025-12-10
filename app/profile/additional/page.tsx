@@ -5,7 +5,7 @@ import Image from "next/image";
 import LayoutWithNav from "@/app/components/LayoutWithNav";
 import Swal from "sweetalert2";
 import newlogo from "../../../public/assets/logo/powerup-new-logo.png";
-
+import { useRouter } from "next/navigation";
 interface AdditionalInfoForm {
   province: string;
   city: string;
@@ -15,6 +15,7 @@ interface AdditionalInfoForm {
 }
 
 export default function AdditionalInfoPage() {
+  const router = useRouter();
   const [user, setUser] = useState<any | null>(null);
   const [form, setForm] = useState<AdditionalInfoForm>({
     province: "",
@@ -97,6 +98,15 @@ export default function AdditionalInfoPage() {
   return (
     <LayoutWithNav user={user}>
       <main className="min-h-screen bg-[var(--background)] text-[var(--foreground)] flex flex-col items-center px-4 py-6 pb-24">
+        {/* Back Button */}
+        <div className="w-full max-w-md mb-4 flex justify-start">
+          <button
+            onClick={() => router.back()}
+            className="bg-powerup-500 hover:bg-powerup-600 text-white font-semibold px-4 py-2 rounded-lg transition"
+          >
+            ← Back
+          </button>
+        </div>
         {/* Header Logo */}
         <div className="w-full max-w-md flex justify-center items-center mb-6">
           <Image src={newlogo} alt="PowerUp Rewards" width={150} height={50} priority />
