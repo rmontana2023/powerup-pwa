@@ -104,7 +104,7 @@ export default function RegisterPage() {
         confirmButtonColor: "#f97316",
       });
     }
-    const minAge = 13;
+    const minAge = 18;
     const ageDiff = today.getFullYear() - birthDateObj.getFullYear();
     const monthDiff = today.getMonth() - birthDateObj.getMonth();
     const dayDiff = today.getDate() - birthDateObj.getDate();
