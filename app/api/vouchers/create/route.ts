@@ -11,29 +11,27 @@ export async function POST(req: Request) {
   try {
     const { customerId, amount, points, stationId } = await req.json();
 
-    // 1️⃣ Validate input
-    if (!customerId || !amount || !points || points <= 0 || amount <= 0) {
+    if (!customerId || !amount || !points) {
       return NextResponse.json(
-        { success: false, error: "Invalid or missing fields" },
+        { success: false, error: "Missing required fields" },
         { status: 400 }
       );
     }
 
-    // 2️⃣ Atomically LOCK points
-    const customer = await Customer.findOneAndUpdate(
-      {
-        _id: customerId,
-        totalPoints: { $gte: points },
-      },
-      {
-        $inc: { totalPoints: -points },
-      },
-      { new: true }
-    );
-
+    // 1️⃣ Fetch the customer
+    const customer = await Customer.findById(customerId);
     if (!customer) {
+      return NextResponse.json({ success: false, error: "Customer not found" }, { status: 404 });
+    }
+
+    // 2️⃣ Check if customer has enough points
+    if (customer.totalPoints < points) {
       return NextResponse.json({ success: false, error: "Not enough points" }, { status: 400 });
     }
+
+    // 3️⃣ Deduct points
+    // customer.totalPoints -= points;
+    // await customer.save();
 
     // 4️⃣ Create Voucher
     const expiresAt = new Date();

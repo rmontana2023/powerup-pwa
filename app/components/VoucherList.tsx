@@ -9,23 +9,22 @@ interface VoucherTier {
 interface VoucherListProps {
   tiers: VoucherTier[];
   onRedeem: (points: number, peso: number) => Promise<void> | void;
-  availablePoints: number; // ✅ renamed
+  totalPoints: number;
 }
 
-export default function VoucherList({ tiers, onRedeem, availablePoints }: VoucherListProps) {
+export default function VoucherList({ tiers, onRedeem, totalPoints }: VoucherListProps) {
+  console.log("VoucherList totalPoints:", totalPoints);
   const [loadingIndex, setLoadingIndex] = useState<number | null>(null);
 
   const handleRedeemClick = async (idx: number, points: number, peso: number) => {
-    if (loadingIndex !== null) return; // 🔒 global lock
-
     setLoadingIndex(idx);
 
     try {
-      await onRedeem(points, peso);
+      await onRedeem(points, peso); // call parent handler
     } catch (error) {
       console.error("Redeem error:", error);
     } finally {
-      setLoadingIndex(null);
+      setLoadingIndex(null); // reset button loading
     }
   };
 
@@ -37,16 +36,17 @@ export default function VoucherList({ tiers, onRedeem, availablePoints }: Vouche
 
       <div className="space-y-4">
         {tiers.map((tier, idx) => {
-          const canRedeem = availablePoints >= tier.points;
+          const canRedeem = totalPoints >= tier.points;
           const isLoading = loadingIndex === idx;
 
           return (
             <div
               key={idx}
-              className={`relative flex flex-col sm:flex-row sm:items-center justify-between
-                bg-white/10 backdrop-blur-lg border border-white/10 text-white p-4 rounded-2xl
-                shadow-[0_3px_10px_rgba(0,0,0,0.3)] transition-transform
-                ${canRedeem ? "hover:scale-[1.02]" : "opacity-40 cursor-not-allowed"}`}
+              className={`relative flex flex-col sm:flex-row sm:items-center justify-between 
+                bg-white/10 backdrop-blur-lg border border-white/10 text-white p-4 rounded-2xl shadow-[0_3px_10px_rgba(0,0,0,0.3)]
+                transition-transform ${
+                  canRedeem ? "hover:scale-[1.02]" : "opacity-40 cursor-not-allowed"
+                }`}
             >
               {/* Left Section */}
               <div className="flex items-center gap-3 mb-3 sm:mb-0">
