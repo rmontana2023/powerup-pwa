@@ -5,7 +5,10 @@ import toast, { Toaster } from "react-hot-toast";
 
 interface Customer {
   _id: string;
-  name: string;
+  // name: string;
+  firstName: string;
+  middleName: string;
+  lastName: string;
   email: string;
   phone: string;
   totalPoints: number;
@@ -111,7 +114,7 @@ export default function CustomerPage() {
               <th className="px-4 py-2">Name</th>
               <th className="px-4 py-2">Email</th>
               <th className="px-4 py-2">Phone</th>
-              <th className="px-4 py-2 text-center">Points</th>
+              <th className="px-4 py-2 text-center">Total Points</th>
               <th className="px-4 py-2 text-center">Account Type</th>
               <th className="px-4 py-2 text-center">Actions</th>
             </tr>
@@ -119,10 +122,12 @@ export default function CustomerPage() {
           <tbody>
             {customers.map((c) => (
               <tr key={c._id} className="border-t border-gray-700 hover:bg-gray-800/50 transition">
-                <td className="px-4 py-2">{c.name}</td>
+                <td className="px-4 py-2">
+                  {c.firstName} {c.middleName} {c.lastName}
+                </td>
                 <td className="px-4 py-2">{c.email}</td>
                 <td className="px-4 py-2">{c.phone}</td>
-                <td className="px-4 py-2 text-center">{c.totalPoints}</td>
+                <td className="px-4 py-2 text-center">{c.totalPoints.toFixed(2)}</td>
                 <td className="px-4 py-2 text-center capitalize">{c.accountType}</td>
                 <td className="px-4 py-2 text-center flex justify-center items-center gap-2">
                   <select
