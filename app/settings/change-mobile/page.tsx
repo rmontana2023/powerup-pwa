@@ -19,6 +19,23 @@ export default function ChangeMobilePage() {
   const [mobile, setMobile] = useState(user?.phone || "");
   const [loading, setLoading] = useState(false);
 
+  // PH mobile validation
+  const normalizePHMobile = (value: string) => {
+    // remove non-digits
+    let digits = value.replace(/\D/g, "");
+
+    // convert +63 or 63 to 09 format
+    if (digits.startsWith("63")) {
+      digits = "0" + digits.slice(2);
+    }
+
+    return digits;
+  };
+
+  const isValidPHMobile = (value: string) => {
+    return /^09\d{9}$/.test(value);
+  };
+
   // Load user from localStorage
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
@@ -31,8 +48,12 @@ export default function ChangeMobilePage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!mobile || mobile.length < 10) {
-      Swal.fire("Error", "Please enter a valid mobile number.", "error");
+    if (!isValidPHMobile(mobile)) {
+      Swal.fire(
+        "Invalid Mobile Number",
+        "Please enter a valid Philippine mobile number (09XXXXXXXXX).",
+        "error"
+      );
       return;
     }
     const token = localStorage.getItem("token");
@@ -83,9 +104,15 @@ export default function ChangeMobilePage() {
               <span className="text-gray-400 mb-1">New Mobile Number</span>
               <input
                 type="tel"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                maxLength={11}
                 value={mobile}
-                onChange={(e) => setMobile(e.target.value)}
-                placeholder="Enter your new mobile number"
+                onChange={(e) => {
+                  const normalized = normalizePHMobile(e.target.value);
+                  setMobile(normalized);
+                }}
+                placeholder="09XXXXXXXXX"
                 className="px-3 py-2 rounded-md bg-[#111] text-[#fafafa] border border-[#222] focus:border-powerup-500 focus:outline-none"
               />
             </label>
