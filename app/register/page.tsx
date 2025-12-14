@@ -5,6 +5,22 @@ import logo2 from "../../public/assets/logo/powerup-logo-2.png";
 import { Eye, EyeOff } from "lucide-react";
 import Swal from "sweetalert2";
 
+// 🇵🇭 PH Mobile Helpers
+const normalizePHMobile = (value: string) => {
+  let digits = value.replace(/\D/g, "");
+
+  // Convert 63 / +63 to 09
+  if (digits.startsWith("63")) {
+    digits = "0" + digits.slice(2);
+  }
+
+  return digits;
+};
+
+const isValidPHMobile = (value: string) => {
+  return /^09\d{9}$/.test(value);
+};
+
 export default function RegisterPage() {
   const [form, setForm] = useState({
     firstName: "",
@@ -56,7 +72,24 @@ export default function RegisterPage() {
         confirmButtonColor: "#f97316",
       });
     }
+    // 📱 Mobile number validation (PH)
+    if (!form.phone) {
+      return Swal.fire({
+        icon: "warning",
+        title: "Mobile Number Required",
+        text: "Please enter your mobile number",
+        confirmButtonColor: "#f97316",
+      });
+    }
 
+    if (!isValidPHMobile(form.phone)) {
+      return Swal.fire({
+        icon: "warning",
+        title: "Invalid Mobile Number",
+        text: "Please enter a valid Philippine mobile number (09XXXXXXXXX)",
+        confirmButtonColor: "#f97316",
+      });
+    }
     if (!/\S+@\S+\.\S+/.test(form.email)) {
       return Swal.fire({
         icon: "warning",
@@ -244,11 +277,20 @@ export default function RegisterPage() {
               required
             />
             <input
-              type="text"
-              placeholder="Mobile Number"
+              type="tel"
+              inputMode="numeric"
+              pattern="[0-9]*"
+              maxLength={11}
+              placeholder="09XXXXXXXXX"
               value={form.phone}
-              onChange={(e) => setForm({ ...form, phone: e.target.value })}
+              onChange={(e) =>
+                setForm({
+                  ...form,
+                  phone: normalizePHMobile(e.target.value),
+                })
+              }
               className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+              required
             />
             <input
               type="text"

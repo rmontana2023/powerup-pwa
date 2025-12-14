@@ -31,6 +31,9 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Email already exists" }, { status: 400 });
     }
 
+    if (!/^09\d{9}$/.test(phone)) {
+      return NextResponse.json({ error: "Invalid PH mobile number" }, { status: 400 });
+    }
     // 🔢 Generate OTP (10-minute expiry)
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     const otpExpires = new Date(Date.now() + 10 * 60 * 1000);
