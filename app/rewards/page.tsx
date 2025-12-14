@@ -55,7 +55,9 @@ export default function RewardsPage() {
   );
   const voucherRef = useRef<HTMLDivElement | null>(null);
   const [lockedPoints, setLockedPoints] = useState(0);
+  const [redeemInProgress, setRedeemInProgress] = useState(false);
 
+  const availablePoints = Math.max(totalPoints - lockedPoints, 0);
   useEffect(() => {
     async function fetchUser() {
       const res = await fetch("/api/auth/me");
@@ -104,7 +106,20 @@ export default function RewardsPage() {
   // }, [qrOpen]);
   const handleRedeem = async (points: number, peso: number) => {
     if (!user) return alert("Please log in first.");
-    if (totalPoints < points) return alert("Insufficient points to redeem this voucher.");
+    if (redeemInProgress) return;
+    if (availablePoints < points) {
+      Swal.fire({
+        title: "Not enough points",
+        text: "You don’t have enough available points to redeem this reward.",
+        icon: "warning",
+        background: "#1c1c1c",
+        color: "#fff",
+        confirmButtonColor: "#e66a00",
+      });
+      return;
+    }
+    setRedeemInProgress(true);
+
     // ⛔ STOP — ask for confirmation first
     const confirm = await Swal.fire({
       title: "Generate Voucher?",
@@ -186,6 +201,8 @@ export default function RewardsPage() {
         color: "#fff",
         confirmButtonColor: "#e66a00",
       });
+    } finally {
+      setRedeemInProgress(false);
     }
   };
 
@@ -329,7 +346,7 @@ export default function RewardsPage() {
           <VoucherList
             tiers={REWARD_TIERS[user.accountType]}
             onRedeem={handleRedeem}
-            totalPoints={totalPoints} // ✅ pass here
+            totalPoints={availablePoints} // ✅ pass here
           />
         )}
         {otpModalOpen && (
