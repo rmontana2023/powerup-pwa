@@ -74,10 +74,15 @@ export default function ChangeMobilePage() {
       const data = await res.json();
       if (res.ok) {
         Swal.fire("Success", "Mobile number updated successfully!", "success");
-        if (user) {
-          const updatedUser = { ...user, phone: mobile };
-          localStorage.setItem("user", JSON.stringify(updatedUser));
-        }
+        // ✅ FORCE LOGOUT
+        localStorage.removeItem("user");
+        localStorage.removeItem("customerId");
+        localStorage.removeItem("token");
+
+        localStorage.clear();
+
+        // ✅ Redirect to login
+        window.location.href = "/login";
       } else {
         Swal.fire("Error", data.error || "Update failed", "error");
       }
