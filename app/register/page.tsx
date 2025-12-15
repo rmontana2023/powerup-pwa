@@ -107,6 +107,16 @@ export default function RegisterPage() {
         confirmButtonColor: "#f97316",
       });
     }
+    // 🔐 New alphanumeric validation
+    const alphanumericRegex = /^[a-zA-Z0-9]+$/;
+    if (!alphanumericRegex.test(form.password)) {
+      return Swal.fire({
+        icon: "warning",
+        title: "Invalid Password",
+        text: "Password must contain only letters and numbers (no spaces or special characters)",
+        confirmButtonColor: "#f97316",
+      });
+    }
 
     if (form.password !== form.confirmPassword) {
       return Swal.fire({
@@ -292,15 +302,16 @@ export default function RegisterPage() {
               className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
               required
             />
-            <input
-              type="text"
+            <textarea
               placeholder="Address"
               value={form.address}
               onChange={(e) => setForm({ ...form, address: e.target.value })}
-              className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+              rows={3}
+              className="w-full p-3 border border-gray-300 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-orange-500"
             />
 
             {/* Password */}
+            {/* Password Field */}
             <div className="relative">
               <input
                 type={showPassword ? "text" : "password"}
@@ -319,8 +330,13 @@ export default function RegisterPage() {
               </button>
             </div>
 
+            {/* Password Helper */}
+            <p className="text-xs text-gray-500 mt-1">
+              Password must be at least 6 characters and contain only letters and numbers.
+            </p>
+
             {/* Confirm Password */}
-            <div className="relative">
+            <div className="relative mt-3">
               <input
                 type={showConfirm ? "text" : "password"}
                 placeholder="Confirm Password"
@@ -472,7 +488,54 @@ export default function RegisterPage() {
             >
               {loading ? "Verifying..." : "Verify OTP"}
             </button>
+            <button
+              type="button"
+              disabled={loading}
+              onClick={async () => {
+                try {
+                  const res = await fetch("/api/otp/resend-register", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ userId }),
+                  });
 
+                  const data = await res.json();
+
+                  if (!res.ok) {
+                    if (data.cooldown) {
+                      Swal.fire({
+                        icon: "warning",
+                        title: "Please wait ⏳",
+                        text: `You can request a new OTP in ${Math.ceil(
+                          data.cooldown / 60
+                        )} minute(s).`,
+                        confirmButtonColor: "#f97316",
+                      });
+                      return;
+                    }
+
+                    throw new Error(data.error);
+                  }
+
+                  Swal.fire({
+                    icon: "success",
+                    title: "OTP Sent",
+                    text: "A new OTP has been sent to your email.",
+                    confirmButtonColor: "#f97316",
+                  });
+                } catch (err: any) {
+                  Swal.fire({
+                    icon: "error",
+                    title: "Resend Failed",
+                    text: err.message || "Unable to resend OTP",
+                    confirmButtonColor: "#f97316",
+                  });
+                }
+              }}
+              className="w-full text-sm text-orange-500 mt-2 hover:underline disabled:opacity-50"
+            >
+              Resend OTP
+            </button>
             <button
               type="button"
               onClick={() => setOtpMode(false)}
