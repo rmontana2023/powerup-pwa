@@ -26,6 +26,9 @@ export default function RegisterPage() {
     firstName: "",
     middleName: "",
     lastName: "",
+    birthMonth: "",
+    birthDay: "",
+    birthYear: "",
     birthDate: "",
     email: "",
     phone: "",
@@ -47,6 +50,23 @@ export default function RegisterPage() {
   const [showConfirm, setShowConfirm] = useState(false);
   const [showTerms, setShowTerms] = useState(false);
   const [showPrivacy, setShowPrivacy] = useState(false);
+
+  const years = Array.from({ length: 80 }, (_, i) => new Date().getFullYear() - i);
+  const months = [
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+  ];
+  const days = Array.from({ length: 31 }, (_, i) => i + 1);
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
@@ -58,9 +78,10 @@ export default function RegisterPage() {
 
     if (
       !form.firstName ||
-      // !form.middleName ||
       !form.lastName ||
-      !form.birthDate ||
+      !form.birthMonth ||
+      !form.birthDay ||
+      !form.birthYear ||
       !form.email ||
       !form.password ||
       !form.confirmPassword
@@ -68,7 +89,7 @@ export default function RegisterPage() {
       return Swal.fire({
         icon: "warning",
         title: "All fields are required",
-        text: "Please fill out all required fields",
+        text: "Please complete all required fields, including your birthdate.",
         confirmButtonColor: "#f97316",
       });
     }
@@ -135,7 +156,20 @@ export default function RegisterPage() {
         confirmButtonColor: "#f97316",
       });
     }
+    if (!form.birthMonth || !form.birthDay || !form.birthYear) {
+      return Swal.fire({
+        icon: "warning",
+        title: "Birthdate Required",
+        text: "Please select your complete birthdate",
+        confirmButtonColor: "#f97316",
+      });
+    }
 
+    const birthDate = `${form.birthYear}-${String(form.birthMonth).padStart(2, "0")}-${String(
+      form.birthDay
+    ).padStart(2, "0")}`;
+
+    form.birthDate = birthDate;
     // Birthdate validation
     const birthDateObj = new Date(form.birthDate);
     const today = new Date();
@@ -271,13 +305,66 @@ export default function RegisterPage() {
               className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
               required
             />
-            <input
-              type="date"
-              value={form.birthDate}
-              onChange={(e) => setForm({ ...form, birthDate: e.target.value })}
-              className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
-              required
-            />
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Birthdate</label>
+
+              <div className="grid grid-cols-3 gap-2">
+                {/* Month */}
+                <div>
+                  <label className="block text-xs text-gray-500 mb-1">Month</label>
+                  <select
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                    value={form.birthMonth}
+                    onChange={(e) => setForm({ ...form, birthMonth: e.target.value })}
+                    required
+                  >
+                    <option value="">Select</option>
+                    {months.map((m, i) => (
+                      <option key={i} value={i + 1}>
+                        {m}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Day */}
+                <div>
+                  <label className="block text-xs text-gray-500 mb-1">Day</label>
+                  <select
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                    value={form.birthDay}
+                    onChange={(e) => setForm({ ...form, birthDay: e.target.value })}
+                    required
+                  >
+                    <option value="">Select</option>
+                    {days.map((d) => (
+                      <option key={d} value={d}>
+                        {d}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Year */}
+                <div>
+                  <label className="block text-xs text-gray-500 mb-1">Year</label>
+                  <select
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                    value={form.birthYear}
+                    onChange={(e) => setForm({ ...form, birthYear: e.target.value })}
+                    required
+                  >
+                    <option value="">Select</option>
+                    {years.map((y) => (
+                      <option key={y} value={y}>
+                        {y}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            </div>
+
             <input
               type="email"
               placeholder="Email Address"
@@ -310,7 +397,6 @@ export default function RegisterPage() {
               className="w-full p-3 border border-gray-300 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-orange-500"
             />
 
-            {/* Password */}
             {/* Password Field */}
             <div className="relative">
               <input
@@ -332,7 +418,8 @@ export default function RegisterPage() {
 
             {/* Password Helper */}
             <p className="text-xs text-gray-500 mt-1">
-              Password must be at least 6 characters and contain only letters and numbers.
+              Password must be at least 6 characters and contain only letters and numbers. Ex.
+              (abc123)
             </p>
 
             {/* Confirm Password */}
