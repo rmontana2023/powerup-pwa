@@ -9,6 +9,7 @@
 /* 🎨 PowerUp PWA Color Palette */
 :root {
   --background: #0a0a0a; /* Dark charcoal background */
+  --black: #0a0a0a;
   --foreground: #ededed; /* Light text */
   --accent: #ffa215; /* Main PowerUp orange */
   --accent-dark: #b66911;

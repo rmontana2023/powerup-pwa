@@ -154,20 +154,25 @@ export default function LoginPage() {
                 setForgotMsg("");
                 setForgotEmail("");
               }}
-              className="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
+              className="absolute top-2 right-2 text-black hover:text-gray-700"
             >
               ✖️
             </button>
-            <h2 className="text-lg font-semibold mb-4">Forgot Password</h2>
+
+            <h2 className="text-lg font-semibold mb-4 text-black">Forgot Password</h2>
+
             <form onSubmit={handleForgotPassword} className="space-y-3">
               <input
                 type="email"
                 placeholder="Enter your email"
                 value={forgotEmail}
                 onChange={(e) => setForgotEmail(e.target.value)}
-                className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                className="w-full p-2 border border-gray-300 rounded-lg 
+                   text-black placeholder-black
+                   focus:outline-none focus:ring-2 focus:ring-orange-500"
                 required
               />
+
               <button
                 type="submit"
                 className="w-full bg-orange-500 hover:bg-orange-600 text-white p-2 rounded-lg"
@@ -175,7 +180,8 @@ export default function LoginPage() {
                 Send Reset Link
               </button>
             </form>
-            {forgotMsg && <p className="text-sm mt-2 text-center text-gray-700">{forgotMsg}</p>}
+
+            {forgotMsg && <p className="text-sm mt-2 text-center text-black">{forgotMsg}</p>}
           </div>
         </div>
       )}
