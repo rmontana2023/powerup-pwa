@@ -11,6 +11,7 @@ export default function LoginPage() {
   const [identifier, setIdentifier] = useState(""); // email OR phone
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [isSending, setIsSending] = useState(false);
 
   // Forgot password state
   const [showForgot, setShowForgot] = useState(false);
@@ -58,6 +59,10 @@ export default function LoginPage() {
   };
   const handleForgotPassword = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (isSending) return; // prevent double submit
+
+    setIsSending(true);
     setForgotMsg("");
 
     try {
@@ -68,6 +73,7 @@ export default function LoginPage() {
       });
 
       const data = await res.json();
+
       if (!res.ok) {
         setForgotMsg(data.error || "Failed to send reset email.");
         return;
@@ -77,6 +83,8 @@ export default function LoginPage() {
     } catch (err) {
       console.error(err);
       setForgotMsg("Something went wrong. Please try again.");
+    } finally {
+      setIsSending(false); // 🔑 always re-enable button
     }
   };
 
@@ -175,9 +183,11 @@ export default function LoginPage() {
 
               <button
                 type="submit"
-                className="w-full bg-orange-500 hover:bg-orange-600 text-white p-2 rounded-lg"
+                disabled={isSending}
+                className={`w-full p-2 rounded-lg text-white transition
+    ${isSending ? "bg-orange-300 cursor-not-allowed" : "bg-orange-500 hover:bg-orange-600"}`}
               >
-                Send Reset Link
+                {isSending ? "Sending..." : "Send Reset Link"}
               </button>
             </form>
 

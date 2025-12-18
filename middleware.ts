@@ -2,14 +2,14 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { jwtVerify } from "jose";
 
-const publicPaths = ["/login", "/register", "/favicon.ico", "/manifest.json"];
+const publicPaths = ["/login", "/register", "/reset-password", "/favicon.ico", "/manifest.json"];
 
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
   // ✅ Allow public and API paths
   if (
-    publicPaths.includes(pathname) ||
+    publicPaths.some((path) => pathname.startsWith(path)) ||
     pathname.startsWith("/api/") ||
     pathname.startsWith("/_next") ||
     pathname.startsWith("/icons")
