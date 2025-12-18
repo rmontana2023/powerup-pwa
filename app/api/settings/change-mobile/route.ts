@@ -13,6 +13,10 @@ export async function POST(req: Request) {
     await connectDB();
     const payload: any = jwt.verify(token, process.env.JWT_SECRET!);
 
+    if (!/^09\d{9}$/.test(mobile)) {
+      return NextResponse.json({ error: "Invalid PH mobile number" }, { status: 400 });
+    }
+
     const user = await Customer.findById(payload.id);
     if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
 

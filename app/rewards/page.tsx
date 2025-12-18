@@ -133,7 +133,7 @@ export default function RewardsPage() {
     setSelectedReward({ points, peso });
 
     try {
-      const res = await fetch("/api/otp/send", {
+      const res = await fetch("/api/otp/send-voucher", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: user.email }),
@@ -193,7 +193,7 @@ export default function RewardsPage() {
     if (!user || !selectedReward) return;
 
     try {
-      const verify = await fetch("/api/otp/verify", {
+      const verify = await fetch("/api/otp/verify-voucher", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: user.email, otp: enteredOTP }),
@@ -329,7 +329,7 @@ export default function RewardsPage() {
           <VoucherList
             tiers={REWARD_TIERS[user.accountType]}
             onRedeem={handleRedeem}
-            totalPoints={totalPoints} // ✅ pass here
+            totalPoints={totalPoints - lockedPoints} // ✅ pass here
           />
         )}
         {otpModalOpen && (

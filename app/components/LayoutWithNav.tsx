@@ -22,7 +22,7 @@ const sidebarMenu = [
       },
       { title: "About Us", href: "/help/about-us" },
       { title: "Terms and Conditions", href: "/help/terms" },
-      { title: "Policy", href: "/help/policy" },
+      { title: "Data Privacy Statement", href: "/help/data-privacy" },
     ],
   },
   {

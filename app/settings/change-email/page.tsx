@@ -56,13 +56,17 @@ export default function ChangeEmailPage() {
       const data = await res.json();
 
       if (res.ok) {
-        Swal.fire("Success", "Email updated successfully!", "success");
-        // Update localStorage
-        if (user) {
-          const updatedUser = { ...user, email };
-          localStorage.setItem("user", JSON.stringify(updatedUser));
-        }
-        // router.back();
+        await Swal.fire("Success", "Email updated successfully. Please log in again.", "success");
+
+        // ✅ FORCE LOGOUT
+        localStorage.removeItem("user");
+        localStorage.removeItem("customerId");
+        localStorage.removeItem("token");
+
+        localStorage.clear();
+
+        // ✅ Redirect to login
+        window.location.href = "/login";
       } else {
         Swal.fire("Error", data.error || "Update failed", "error");
       }

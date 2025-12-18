@@ -1,11 +1,13 @@
 import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/db";
 import { Customer } from "@/models/Customer";
-import { sendEmailOtp } from "@/lib/sendEmailOtp"; // move the sendEmailOtp function here
-// import { sendSmsOtp } from "@/lib/sendSmsOtp"; // reserved for SMS OTP (future use)
+import { Otp } from "@/models/Otp";
+import { sendEmailOtp } from "@/lib/sendEmailOtp";
 
 export async function POST(req: Request) {
   try {
+    await connectDB();
+
     const {
       firstName,
       middleName,
@@ -17,13 +19,13 @@ export async function POST(req: Request) {
       accountType,
       birthDate,
     } = await req.json();
-    console.log("🚀 ~ POST ~ lastName:", lastName);
-    console.log("🚀 ~ POST ~ middleName:", middleName);
-    console.log("🚀 ~ POST ~ firstName:", firstName);
-    await connectDB();
 
     if (!firstName || !lastName || !email || !password || !accountType || !birthDate) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+    }
+
+    if (!/^09\d{9}$/.test(phone)) {
+      return NextResponse.json({ error: "Invalid PH mobile number" }, { status: 400 });
     }
 
     const existing = await Customer.findOne({ email });
@@ -31,14 +33,9 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Email already exists" }, { status: 400 });
     }
 
-    // 🔢 Generate OTP (10-minute expiry)
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    const otpExpires = new Date(Date.now() + 10 * 60 * 1000);
-
-    // 🎟️ Generate unique QR code for user
+    // 🔐 Create user (UNVERIFIED)
     const qrCode = `PU-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
 
-    // 🧑‍💻 Create unverified user
     const customer = await Customer.create({
       firstName,
       middleName,
@@ -50,26 +47,27 @@ export async function POST(req: Request) {
       password,
       qrCode,
       accountType,
-      otp,
-      otpExpires,
       isVerified: false,
     });
 
-    // 📧 Send OTP via Email
-    try {
-      await sendEmailOtp(email, otp);
-    } catch (err) {
-      console.error("❌ Email OTP failed:", err);
-    }
+    // ❌ Invalidate old REGISTER OTPs (safety)
+    await Otp.updateMany({ email, purpose: "REGISTER", used: false }, { used: true });
 
-    // 📱 Reserved for future SMS OTP sending
-    // try {
-    //   await sendSmsOtp(phone, otp);
-    // } catch (err) {
-    //   console.error("❌ SMS OTP failed:", err);
-    // }
+    // 🔢 Generate OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+    await Otp.create({
+      email,
+      code: otp,
+      purpose: "REGISTER",
+      expiresAt: new Date(Date.now() + 10 * 60 * 1000),
+    });
+
+    // 📧 Send OTP
+    await sendEmailOtp(email, otp);
 
     return NextResponse.json({
+      success: true,
       message: "OTP sent to your email",
       userId: customer._id.toString(),
     });
