@@ -13,6 +13,7 @@ interface VoucherListProps {
 }
 
 export default function VoucherList({ tiers, onRedeem, totalPoints }: VoucherListProps) {
+  console.log("VoucherList totalPoints:", totalPoints);
   const [loadingIndex, setLoadingIndex] = useState<number | null>(null);
 
   const handleRedeemClick = async (idx: number, points: number, peso: number) => {

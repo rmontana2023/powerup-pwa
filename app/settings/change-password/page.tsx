@@ -59,12 +59,24 @@ export default function ChangePasswordPage() {
       const data = await res.json();
 
       if (res.ok && data.success) {
-        Swal.fire("Success", "Password updated successfully!", "success").then(() => {
-          // Optionally, redirect or clear fields
-          setCurrentPassword("");
-          setNewPassword("");
-          setConfirmPassword("");
-        });
+        Swal.fire("Success", "Password updated successfully! Please log in again.", "success").then(
+          () => {
+            // Optionally, redirect or clear fields
+            setCurrentPassword("");
+            setNewPassword("");
+            setConfirmPassword("");
+
+            // ✅ FORCE LOGOUT
+            localStorage.removeItem("user");
+            localStorage.removeItem("customerId");
+            localStorage.removeItem("token");
+
+            localStorage.clear();
+
+            // ✅ Redirect to login
+            window.location.href = "/login";
+          }
+        );
       } else {
         Swal.fire("Error", data.error || "Update failed", "error");
       }
