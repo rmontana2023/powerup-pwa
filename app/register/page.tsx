@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import Image from "next/image";
-import logo2 from "../../public/assets/logo/powerup-logo-2.png";
+import logo2 from "../../public/assets/logo/powerup-new-logo.png";
 import { Eye, EyeOff } from "lucide-react";
 import Swal from "sweetalert2";
 
@@ -183,12 +183,12 @@ export default function RegisterPage() {
   };
 
   return (
-    <main className="flex items-center justify-center min-h-screen bg-white px-4">
-      <div className="bg-white rounded-2xl w-full max-w-md p-8 animate-fadeIn">
+    <main className="flex items-center justify-center min-h-screen bg-[var(--background)] text-[var(--foreground)] px-4">
+      <div className=" bg-[var(--background)] text-[var(--foreground)] rounded-2xl w-full max-w-md p-8 animate-fadeIn">
         {/* Logo */}
         <div className="flex flex-col items-center mb-8">
           <Image src={logo2} alt="PowerUp Rewards" width={250} height={80} priority />
-          <h1 className="mt-4 text-2xl font-bold text-gray-800">
+          <h1 className="mt-4 text-2xl font-bold text-[var(--accent)]">
             {otpMode ? "Verify Your Email" : "Create Your Account"}
           </h1>
           <p className="text-gray-500 text-sm text-center">
@@ -210,7 +210,7 @@ export default function RegisterPage() {
               placeholder="First Name"
               value={form.firstName}
               onChange={(e) => setForm({ ...form, firstName: e.target.value })}
-              className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+              className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none placeholder-gray focus:ring-2 focus:ring-orange-500"
               required
             />
             <input
@@ -218,14 +218,14 @@ export default function RegisterPage() {
               placeholder="Middle Name"
               value={form.middleName}
               onChange={(e) => setForm({ ...form, middleName: e.target.value })}
-              className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+              className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none placeholder-gray focus:ring-2 focus:ring-orange-500"
             />
             <input
               type="text"
               placeholder="Last Name"
               value={form.lastName}
               onChange={(e) => setForm({ ...form, lastName: e.target.value })}
-              className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+              className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none placeholder-gray focus:ring-2 focus:ring-orange-500"
               required
             />
             <input
