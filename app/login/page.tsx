@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import newlogo from "../../public/assets/logo/powerup-new-logo.png";
@@ -18,6 +18,40 @@ export default function LoginPage() {
   const [forgotEmail, setForgotEmail] = useState("");
   const [forgotMsg, setForgotMsg] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+
+  const RESEND_COOLDOWN = 5 * 60; // 5 minutes in seconds
+
+  const [cooldown, setCooldown] = useState<number>(0);
+
+  useEffect(() => {
+    const lastSent = localStorage.getItem("forgotPasswordLastSent");
+
+    if (lastSent) {
+      const diff = Math.floor((Date.now() - Number(lastSent)) / 1000);
+      const remaining = RESEND_COOLDOWN - diff;
+
+      if (remaining > 0) {
+        setCooldown(remaining);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    if (cooldown <= 0) return;
+
+    const interval = setInterval(() => {
+      setCooldown((prev) => {
+        if (prev <= 1) {
+          clearInterval(interval);
+          localStorage.removeItem("forgotPasswordLastSent");
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [cooldown]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -60,7 +94,7 @@ export default function LoginPage() {
   const handleForgotPassword = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (isSending) return; // prevent double submit
+    if (isSending || cooldown > 0) return;
 
     setIsSending(true);
     setForgotMsg("");
@@ -80,11 +114,15 @@ export default function LoginPage() {
       }
 
       setForgotMsg("Check your email for password reset instructions.");
+
+      // ✅ start cooldown
+      localStorage.setItem("forgotPasswordLastSent", Date.now().toString());
+      setCooldown(RESEND_COOLDOWN);
     } catch (err) {
       console.error(err);
       setForgotMsg("Something went wrong. Please try again.");
     } finally {
-      setIsSending(false); // 🔑 always re-enable button
+      setIsSending(false);
     }
   };
 
@@ -183,11 +221,22 @@ export default function LoginPage() {
 
               <button
                 type="submit"
-                disabled={isSending}
+                disabled={isSending || cooldown > 0}
                 className={`w-full p-2 rounded-lg text-white transition
-    ${isSending ? "bg-orange-300 cursor-not-allowed" : "bg-orange-500 hover:bg-orange-600"}`}
+    ${
+      isSending || cooldown > 0
+        ? "bg-orange-300 cursor-not-allowed"
+        : "bg-orange-500 hover:bg-orange-600"
+    }`}
               >
-                {isSending ? "Sending..." : "Send Reset Link"}
+                {isSending
+                  ? "Sending..."
+                  : cooldown > 0
+                  ? `Resend in ${Math.floor(cooldown / 60)}:${String(cooldown % 60).padStart(
+                      2,
+                      "0"
+                    )}`
+                  : "Send Reset Link"}
               </button>
             </form>
 
