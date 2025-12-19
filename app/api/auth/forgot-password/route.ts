@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    const resetLink = `${process.env.NEXT_PUBLIC_APP_URL}/reset-password?token=${token}&email=${email}`;
+    const resetLink = `${process.env.PUBLIC_APP_URL}/reset-password?token=${token}&email=${email}`;
 
     await transporter.sendMail({
       from: `"PowerUp Rewards" <${process.env.SMTP_USER}>`,
