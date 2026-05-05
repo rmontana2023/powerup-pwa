@@ -1,9 +1,29 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import logo2 from "../../public/assets/logo/powerup-new-logo.png";
 import { Eye, EyeOff } from "lucide-react";
 import Swal from "sweetalert2";
+const PSGC_BASE = "https://psgc.gitlab.io/api";
+
+export const fetchCities = async () => {
+  try {
+    const res = await fetch(`${PSGC_BASE}/cities-municipalities/`);
+
+    if (!res.ok) throw new Error("Failed to fetch cities");
+
+    const data = await res.json();
+    return data;
+  } catch (error) {
+    console.error("PSGC fetch error:", error);
+    return [];
+  }
+};
+
+export const fetchBarangays = async (cityCode: string) => {
+  const res = await fetch(`${PSGC_BASE}/cities-municipalities/${cityCode}/barangays/`);
+  return res.json();
+};
 
 // 🇵🇭 PH Mobile Helpers
 const normalizePHMobile = (value: string) => {
@@ -26,6 +46,7 @@ export default function RegisterPage() {
     firstName: "",
     middleName: "",
     lastName: "",
+    gender: "", // ✅ NEW
     birthMonth: "",
     birthDay: "",
     birthYear: "",
@@ -33,6 +54,9 @@ export default function RegisterPage() {
     email: "",
     phone: "",
     address: "",
+    city: "",
+    cityCode: "", // 🔥 important
+    barangay: "",
     password: "",
     confirmPassword: "",
     accountType: "ordinary",
@@ -50,6 +74,56 @@ export default function RegisterPage() {
   const [showConfirm, setShowConfirm] = useState(false);
   const [showTerms, setShowTerms] = useState(false);
   const [showPrivacy, setShowPrivacy] = useState(false);
+
+  const [cities, setCities] = useState<any[]>([]);
+  const [barangays, setBarangays] = useState<any[]>([]);
+  const [loadingCities, setLoadingCities] = useState(true);
+  const [loadingBarangays, setLoadingBarangays] = useState(false);
+
+  useEffect(() => {
+    const loadCities = async () => {
+      try {
+        const data = await fetchCities();
+
+        console.log("ALL CITIES:", data); // 👈 DEBUG
+
+        const filtered = data.filter((c: any) => c.provinceCode === "083700000");
+
+        console.log("FILTERED:", filtered); // 👈 DEBUG
+
+        setCities(data);
+      } catch (err) {
+        console.error("Failed to load cities", err);
+      } finally {
+        setLoadingCities(false);
+      }
+    };
+
+    loadCities();
+  }, []);
+  const handleCityChange = async (e: any) => {
+    const selectedCode = e.target.value;
+
+    const selectedCity = cities.find((c) => c.code === selectedCode);
+
+    setForm({
+      ...form,
+      city: selectedCity?.name || "",
+      cityCode: selectedCode,
+      barangay: "",
+    });
+
+    setLoadingBarangays(true);
+
+    try {
+      const data = await fetchBarangays(selectedCode);
+      setBarangays(data);
+    } catch (err) {
+      console.error("Failed to load barangays", err);
+    } finally {
+      setLoadingBarangays(false);
+    }
+  };
 
   const years = Array.from({ length: 80 }, (_, i) => new Date().getFullYear() - i);
   const months = [
@@ -128,13 +202,14 @@ export default function RegisterPage() {
         confirmButtonColor: "#f97316",
       });
     }
-    // 🔐 New alphanumeric validation
-    const alphanumericRegex = /^[a-zA-Z0-9]+$/;
-    if (!alphanumericRegex.test(form.password)) {
+    const strongPasswordRegex =
+      /^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*#?&^()[\]{}\-_=+|\\:;"'<>,./~`]).{6,}$/;
+
+    if (!strongPasswordRegex.test(form.password)) {
       return Swal.fire({
         icon: "warning",
-        title: "Invalid Password",
-        text: "Password must contain only letters and numbers (no spaces or special characters)",
+        title: "Weak Password",
+        text: "Password must be at least 6 characters and include letters, numbers, and at least one symbol",
         confirmButtonColor: "#f97316",
       });
     }
@@ -164,9 +239,25 @@ export default function RegisterPage() {
         confirmButtonColor: "#f97316",
       });
     }
+    if (!form.gender) {
+      return Swal.fire({
+        icon: "warning",
+        title: "Gender Required",
+        text: "Please select your gender",
+        confirmButtonColor: "#f97316",
+      });
+    }
+    if (!form.city || !form.barangay) {
+      return Swal.fire({
+        icon: "warning",
+        title: "Address Required",
+        text: "Please select your city and barangay",
+        confirmButtonColor: "#f97316",
+      });
+    }
 
     const birthDate = `${form.birthYear}-${String(form.birthMonth).padStart(2, "0")}-${String(
-      form.birthDay
+      form.birthDay,
     ).padStart(2, "0")}`;
 
     form.birthDate = birthDate;
@@ -223,6 +314,45 @@ export default function RegisterPage() {
       setError(err.message || "Error encountered");
     } finally {
       setLoading(false);
+    }
+  };
+  const handleResendOtp = async () => {
+    try {
+      const res = await fetch("/api/otp/resend-register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        if (data.cooldown) {
+          Swal.fire({
+            icon: "warning",
+            title: "Please wait ⏳",
+            text: `You can request a new OTP in ${Math.ceil(data.cooldown / 60)} minute(s).`,
+            confirmButtonColor: "#f97316",
+          });
+          return;
+        }
+
+        throw new Error(data.error);
+      }
+
+      Swal.fire({
+        icon: "success",
+        title: "OTP Sent",
+        text: "A new OTP has been sent to your email.",
+        confirmButtonColor: "#f97316",
+      });
+    } catch (err: any) {
+      Swal.fire({
+        icon: "error",
+        title: "Resend Failed",
+        text: err.message || "Unable to resend OTP",
+        confirmButtonColor: "#f97316",
+      });
     }
   };
 
@@ -305,6 +435,19 @@ export default function RegisterPage() {
               className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none placeholder-gray focus:ring-2 focus:ring-orange-500"
               required
             />
+            <select
+              value={form.gender}
+              onChange={(e) => setForm({ ...form, gender: e.target.value })}
+              className="w-full p-3 border border-gray-300 text-gray-500 rounded-lg focus:ring-2 focus:ring-orange-500"
+              required
+            >
+              <option value="" className="placeholder-gray">
+                Select Gender
+              </option>
+              <option value="male">Male</option>
+              <option value="female">Female</option>
+              <option value="other">Prefer not to say</option>
+            </select>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Birthdate</label>
 
@@ -313,12 +456,14 @@ export default function RegisterPage() {
                 <div>
                   <label className="block text-xs text-gray-500 mb-1">Month</label>
                   <select
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                    className="w-full p-3 border border-gray-300 rounded-lg text-gray-500 focus:outline-none focus:ring-2 focus:ring-orange-500"
                     value={form.birthMonth}
                     onChange={(e) => setForm({ ...form, birthMonth: e.target.value })}
                     required
                   >
-                    <option value="">Select</option>
+                    <option value="" className="text-gray-700">
+                      Select
+                    </option>
                     {months.map((m, i) => (
                       <option key={i} value={i + 1}>
                         {m}
@@ -331,12 +476,14 @@ export default function RegisterPage() {
                 <div>
                   <label className="block text-xs text-gray-500 mb-1">Day</label>
                   <select
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                    className="w-full p-3 border border-gray-300 rounded-lg  text-gray-500 focus:outline-none focus:ring-2 focus:ring-orange-500"
                     value={form.birthDay}
                     onChange={(e) => setForm({ ...form, birthDay: e.target.value })}
                     required
                   >
-                    <option value="">Select</option>
+                    <option value="" className="text-gray-700">
+                      Select
+                    </option>
                     {days.map((d) => (
                       <option key={d} value={d}>
                         {d}
@@ -349,12 +496,14 @@ export default function RegisterPage() {
                 <div>
                   <label className="block text-xs text-gray-500 mb-1">Year</label>
                   <select
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                    className="w-full p-3 border border-gray-300 rounded-lg  text-gray-500 focus:outline-none focus:ring-2 focus:ring-orange-500"
                     value={form.birthYear}
                     onChange={(e) => setForm({ ...form, birthYear: e.target.value })}
                     required
                   >
-                    <option value="">Select</option>
+                    <option value="" className="text-gray-700">
+                      Select
+                    </option>
                     {years.map((y) => (
                       <option key={y} value={y}>
                         {y}
@@ -389,13 +538,39 @@ export default function RegisterPage() {
               className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
               required
             />
-            <textarea
-              placeholder="Address"
-              value={form.address}
-              onChange={(e) => setForm({ ...form, address: e.target.value })}
-              rows={3}
-              className="w-full p-3 border border-gray-300 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-orange-500"
-            />
+            <select
+              value={form.cityCode}
+              onChange={handleCityChange}
+              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 text-gray-500 focus:ring-orange-500"
+              required
+            >
+              <option value="" className="placeholder-gray">
+                {loadingCities ? "Loading cities..." : "Select City / Municipality"}
+              </option>
+
+              {cities.map((city) => (
+                <option key={city.code} value={city.code}>
+                  {city.name}
+                </option>
+              ))}
+            </select>
+            <select
+              value={form.barangay}
+              onChange={(e) => setForm({ ...form, barangay: e.target.value })}
+              className="w-full p-3 border border-gray-300 text-gray-500 rounded-lg focus:ring-2 focus:ring-orange-500"
+              required
+              disabled={!form.cityCode || loadingBarangays}
+            >
+              <option value="" className="placeholder-gray">
+                {loadingBarangays ? "Loading barangays..." : "Select Barangay"}
+              </option>
+
+              {barangays.map((brgy) => (
+                <option key={brgy.code} value={brgy.name}>
+                  {brgy.name}
+                </option>
+              ))}
+            </select>
 
             {/* Password Field */}
             <div className="relative">
@@ -578,47 +753,7 @@ export default function RegisterPage() {
             <button
               type="button"
               disabled={loading}
-              onClick={async () => {
-                try {
-                  const res = await fetch("/api/otp/resend-register", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ userId }),
-                  });
-
-                  const data = await res.json();
-
-                  if (!res.ok) {
-                    if (data.cooldown) {
-                      Swal.fire({
-                        icon: "warning",
-                        title: "Please wait ⏳",
-                        text: `You can request a new OTP in ${Math.ceil(
-                          data.cooldown / 60
-                        )} minute(s).`,
-                        confirmButtonColor: "#f97316",
-                      });
-                      return;
-                    }
-
-                    throw new Error(data.error);
-                  }
-
-                  Swal.fire({
-                    icon: "success",
-                    title: "OTP Sent",
-                    text: "A new OTP has been sent to your email.",
-                    confirmButtonColor: "#f97316",
-                  });
-                } catch (err: any) {
-                  Swal.fire({
-                    icon: "error",
-                    title: "Resend Failed",
-                    text: err.message || "Unable to resend OTP",
-                    confirmButtonColor: "#f97316",
-                  });
-                }
-              }}
+              onClick={handleResendOtp}
               className="w-full text-sm text-orange-500 mt-2 hover:underline disabled:opacity-50"
             >
               Resend OTP

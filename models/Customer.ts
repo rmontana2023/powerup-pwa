@@ -6,6 +6,11 @@ const customerSchema = new mongoose.Schema(
     firstName: { type: String, required: true },
     middleName: { type: String },
     lastName: { type: String, required: true },
+    gender: {
+      type: String,
+      enum: ["male", "female", "other"],
+      required: true,
+    },
     email: { type: String, required: true, unique: true },
     phone: { type: String, required: true },
     address: { type: String },
@@ -31,7 +36,7 @@ const customerSchema = new mongoose.Schema(
     resetTokenExpires: { type: Date }, // ⏱ token expiration
     lastOtpRequest: { type: Date, default: null },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 customerSchema.pre("save", async function (next) {
