@@ -4,26 +4,7 @@ import Image from "next/image";
 import logo2 from "../../public/assets/logo/powerup-new-logo.png";
 import { Eye, EyeOff } from "lucide-react";
 import Swal from "sweetalert2";
-const PSGC_BASE = "https://psgc.gitlab.io/api";
-
-export const fetchCities = async () => {
-  try {
-    const res = await fetch(`${PSGC_BASE}/cities-municipalities/`);
-
-    if (!res.ok) throw new Error("Failed to fetch cities");
-
-    const data = await res.json();
-    return data;
-  } catch (error) {
-    console.error("PSGC fetch error:", error);
-    return [];
-  }
-};
-
-export const fetchBarangays = async (cityCode: string) => {
-  const res = await fetch(`${PSGC_BASE}/cities-municipalities/${cityCode}/barangays/`);
-  return res.json();
-};
+import { fetchCities, fetchBarangays } from "@/lib/psgc";
 
 // 🇵🇭 PH Mobile Helpers
 const normalizePHMobile = (value: string) => {
