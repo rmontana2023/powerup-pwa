@@ -643,7 +643,7 @@ export default function RegisterPage() {
             <div className="w-full">
               <Combobox
                 value={form.barangay}
-                onChange={(value) =>
+                onChange={(value: string | null) =>
                   setForm({
                     ...form,
                     barangay: value || "",
@@ -656,22 +656,17 @@ export default function RegisterPage() {
                   <Combobox.Input
                     className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500"
                     displayValue={(barangay: string) => barangay}
-                    onChange={(value) =>
-                      setForm({
-                        ...form,
-                        barangay: value || "",
-                      })
-                    }
+                    onChange={(e) => setBarangayQuery(e.target.value)}
                     placeholder="Select Barangay"
                   />
 
-                  {/* DROPDOWN BUTTON */}
+                  {/* BUTTON */}
                   <Combobox.Button className="absolute inset-y-0 right-0 flex items-center pr-3">
                     ▼
                   </Combobox.Button>
 
                   {/* OPTIONS */}
-                  <Combobox.Options className="absolute z-10 mt-1 max-h-60 w-full overflow-auto bg-black border border-gray-500 rounded-lg shadow-lg">
+                  <Combobox.Options className="absolute z-10 mt-1 max-h-60 w-full overflow-auto bg-white border border-gray-200 rounded-lg shadow-lg">
                     {filteredBarangays.length === 0 ? (
                       <div className="p-3 text-gray-500">No results found</div>
                     ) : (
