@@ -651,7 +651,12 @@ export default function RegisterPage() {
                   <Combobox.Input
                     className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500"
                     displayValue={(barangay: string) => barangay}
-                    onChange={(e) => setBarangayQuery(e.target.value)}
+                    onChange={(value) =>
+                      setForm({
+                        ...form,
+                        barangay: value || "",
+                      })
+                    }
                     placeholder="Select Barangay"
                   />
 
