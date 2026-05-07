@@ -643,7 +643,12 @@ export default function RegisterPage() {
             <div className="w-full">
               <Combobox
                 value={form.barangay}
-                onChange={(value) => setForm({ ...form, barangay: value })}
+                onChange={(value) =>
+                  setForm({
+                    ...form,
+                    barangay: value || "",
+                  })
+                }
                 disabled={!form.cityCode}
               >
                 <div className="relative">
