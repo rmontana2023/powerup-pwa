@@ -85,7 +85,8 @@ export default function RegisterPage() {
     loadProvinces();
   }, []);
 
-  const handleProvinceChange = async (value: string) => {
+  const handleProvinceChange = async (value: string | null) => {
+    if (!value) return;
     const selectedProvince = provinces.find((p) => p.name === value);
 
     if (!selectedProvince) return;
@@ -112,7 +113,8 @@ export default function RegisterPage() {
       console.error("Failed to load cities", err);
     }
   };
-  const handleCityChange = async (value: string) => {
+  const handleCityChange = async (value: string | null) => {
+    if (!value) return;
     const selectedCity = cities.find((c) => c.name === value);
 
     if (!selectedCity) return;
