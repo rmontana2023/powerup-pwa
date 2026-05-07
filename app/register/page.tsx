@@ -4,7 +4,8 @@ import Image from "next/image";
 import logo2 from "../../public/assets/logo/powerup-new-logo.png";
 import { Eye, EyeOff } from "lucide-react";
 import Swal from "sweetalert2";
-import { fetchCities, fetchBarangays } from "@/lib/psgc";
+import { Combobox } from "@headlessui/react";
+import { fetchProvinces, fetchCities, fetchBarangays } from "@/lib/psgc";
 
 // 🇵🇭 PH Mobile Helpers
 const normalizePHMobile = (value: string) => {
@@ -35,8 +36,10 @@ export default function RegisterPage() {
     email: "",
     phone: "",
     address: "",
+    province: "",
+    provinceCode: "",
     city: "",
-    cityCode: "", // 🔥 important
+    cityCode: "",
     barangay: "",
     password: "",
     confirmPassword: "",
@@ -56,55 +59,97 @@ export default function RegisterPage() {
   const [showTerms, setShowTerms] = useState(false);
   const [showPrivacy, setShowPrivacy] = useState(false);
 
+  const [provinces, setProvinces] = useState<any[]>([]);
   const [cities, setCities] = useState<any[]>([]);
   const [barangays, setBarangays] = useState<any[]>([]);
-  const [loadingCities, setLoadingCities] = useState(true);
+  const [loadingCities, setLoadingCities] = useState(false);
   const [loadingBarangays, setLoadingBarangays] = useState(false);
 
+  const [provinceQuery, setProvinceQuery] = useState("");
+  const [cityQuery, setCityQuery] = useState("");
+  const [barangayQuery, setBarangayQuery] = useState("");
+
   useEffect(() => {
-    const loadCities = async () => {
+    const loadProvinces = async () => {
       try {
-        const data = await fetchCities();
+        const data = await fetchProvinces();
 
-        console.log("ALL CITIES:", data); // 👈 DEBUG
+        const sorted = data.sort((a: any, b: any) => a.name.localeCompare(b.name));
 
-        const filtered = data.filter((c: any) => c.provinceCode === "083700000");
-
-        console.log("FILTERED:", filtered); // 👈 DEBUG
-
-        setCities(data);
+        setProvinces(sorted);
       } catch (err) {
-        console.error("Failed to load cities", err);
-      } finally {
-        setLoadingCities(false);
+        console.error("Failed to load provinces", err);
       }
     };
 
-    loadCities();
+    loadProvinces();
   }, []);
-  const handleCityChange = async (e: any) => {
-    const selectedCode = e.target.value;
 
-    const selectedCity = cities.find((c) => c.code === selectedCode);
+  const handleProvinceChange = async (value: string) => {
+    const selectedProvince = provinces.find((p) => p.name === value);
+
+    if (!selectedProvince) return;
 
     setForm({
       ...form,
-      city: selectedCity?.name || "",
-      cityCode: selectedCode,
+      province: selectedProvince.name,
+      provinceCode: selectedProvince.code,
+      city: "",
+      cityCode: "",
       barangay: "",
     });
 
-    setLoadingBarangays(true);
+    setCities([]);
+    setBarangays([]);
 
     try {
-      const data = await fetchBarangays(selectedCode);
-      setBarangays(data);
+      const data = await fetchCities(selectedProvince.code);
+
+      const sorted = data.sort((a: any, b: any) => a.name.localeCompare(b.name));
+
+      setCities(sorted);
     } catch (err) {
-      console.error("Failed to load barangays", err);
-    } finally {
-      setLoadingBarangays(false);
+      console.error("Failed to load cities", err);
     }
   };
+  const handleCityChange = async (value: string) => {
+    const selectedCity = cities.find((c) => c.name === value);
+
+    if (!selectedCity) return;
+
+    setForm({
+      ...form,
+      city: selectedCity.name,
+      cityCode: selectedCity.code,
+      barangay: "",
+    });
+
+    setBarangays([]);
+
+    try {
+      const data = await fetchBarangays(selectedCity.code);
+
+      const sorted = data.sort((a: any, b: any) => a.name.localeCompare(b.name));
+
+      setBarangays(sorted);
+    } catch (err) {
+      console.error("Failed to load barangays", err);
+    }
+  };
+  const filteredProvinces =
+    provinceQuery === ""
+      ? provinces
+      : provinces.filter((p) => p.name.toLowerCase().includes(provinceQuery.toLowerCase()));
+
+  const filteredCities =
+    cityQuery === ""
+      ? cities
+      : cities.filter((c) => c.name.toLowerCase().includes(cityQuery.toLowerCase()));
+
+  const filteredBarangays =
+    barangayQuery === ""
+      ? barangays
+      : barangays.filter((b) => b.name.toLowerCase().includes(barangayQuery.toLowerCase()));
 
   const years = Array.from({ length: 80 }, (_, i) => new Date().getFullYear() - i);
   const months = [
@@ -228,11 +273,11 @@ export default function RegisterPage() {
         confirmButtonColor: "#f97316",
       });
     }
-    if (!form.city || !form.barangay) {
+    if (!form.province || !form.city || !form.barangay) {
       return Swal.fire({
         icon: "warning",
         title: "Address Required",
-        text: "Please select your city and barangay",
+        text: "Please complete your address",
         confirmButtonColor: "#f97316",
       });
     }
@@ -519,39 +564,121 @@ export default function RegisterPage() {
               className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
               required
             />
-            <select
-              value={form.cityCode}
-              onChange={handleCityChange}
-              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 text-gray-500 focus:ring-orange-500"
-              required
-            >
-              <option value="" className="placeholder-gray">
-                {loadingCities ? "Loading cities..." : "Select City / Municipality"}
-              </option>
+            <div className="w-full">
+              <Combobox value={form.province} onChange={handleProvinceChange}>
+                <div className="relative">
+                  {/* INPUT */}
+                  <Combobox.Input
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500"
+                    displayValue={(province: string) => province}
+                    onChange={(e) => setProvinceQuery(e.target.value)}
+                    placeholder="Select Province"
+                  />
 
-              {cities.map((city) => (
-                <option key={city.code} value={city.code}>
-                  {city.name}
-                </option>
-              ))}
-            </select>
-            <select
-              value={form.barangay}
-              onChange={(e) => setForm({ ...form, barangay: e.target.value })}
-              className="w-full p-3 border border-gray-300 text-gray-500 rounded-lg focus:ring-2 focus:ring-orange-500"
-              required
-              disabled={!form.cityCode || loadingBarangays}
-            >
-              <option value="" className="placeholder-gray">
-                {loadingBarangays ? "Loading barangays..." : "Select Barangay"}
-              </option>
+                  {/* BUTTON */}
+                  <Combobox.Button className="absolute inset-y-0 right-0 flex items-center pr-3">
+                    ▼
+                  </Combobox.Button>
 
-              {barangays.map((brgy) => (
-                <option key={brgy.code} value={brgy.name}>
-                  {brgy.name}
-                </option>
-              ))}
-            </select>
+                  {/* OPTIONS */}
+                  <Combobox.Options className="absolute z-10 mt-1 max-h-60 w-full overflow-auto bg-black border border-gray-500 rounded-lg shadow-lg">
+                    {filteredProvinces.length === 0 ? (
+                      <div className="p-3 text-gray-500">No results found</div>
+                    ) : (
+                      filteredProvinces.map((province) => (
+                        <Combobox.Option
+                          key={province.code}
+                          value={province.name}
+                          className={({ active }) =>
+                            `cursor-pointer px-4 py-2 ${active ? "bg-orange-500 text-white" : ""}`
+                          }
+                        >
+                          {province.name}
+                        </Combobox.Option>
+                      ))
+                    )}
+                  </Combobox.Options>
+                </div>
+              </Combobox>
+            </div>
+            <div className="w-full">
+              <Combobox value={form.city} onChange={handleCityChange} disabled={!form.provinceCode}>
+                <div className="relative">
+                  {/* INPUT */}
+                  <Combobox.Input
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500"
+                    displayValue={(city: string) => city}
+                    onChange={(e) => setCityQuery(e.target.value)}
+                    placeholder="Select City / Municipality"
+                  />
+
+                  {/* DROPDOWN BUTTON */}
+                  <Combobox.Button className="absolute inset-y-0 right-0 flex items-center pr-3">
+                    ▼
+                  </Combobox.Button>
+
+                  {/* OPTIONS */}
+                  <Combobox.Options className="absolute z-10 mt-1 max-h-60 w-full overflow-auto bg-black border border-gray-500 rounded-lg shadow-lg">
+                    {filteredCities.length === 0 ? (
+                      <div className="p-3 text-gray-500">No results found</div>
+                    ) : (
+                      filteredCities.map((city) => (
+                        <Combobox.Option
+                          key={city.code}
+                          value={city.name}
+                          className={({ active }) =>
+                            `cursor-pointer px-4 py-2 ${active ? "bg-orange-500 text-white" : ""}`
+                          }
+                        >
+                          {city.name}
+                        </Combobox.Option>
+                      ))
+                    )}
+                  </Combobox.Options>
+                </div>
+              </Combobox>
+            </div>
+            <div className="w-full">
+              <Combobox
+                value={form.barangay}
+                onChange={(value) => setForm({ ...form, barangay: value })}
+                disabled={!form.cityCode}
+              >
+                <div className="relative">
+                  {/* INPUT */}
+                  <Combobox.Input
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500"
+                    displayValue={(barangay: string) => barangay}
+                    onChange={(e) => setBarangayQuery(e.target.value)}
+                    placeholder="Select Barangay"
+                  />
+
+                  {/* DROPDOWN BUTTON */}
+                  <Combobox.Button className="absolute inset-y-0 right-0 flex items-center pr-3">
+                    ▼
+                  </Combobox.Button>
+
+                  {/* OPTIONS */}
+                  <Combobox.Options className="absolute z-10 mt-1 max-h-60 w-full overflow-auto bg-black border border-gray-500 rounded-lg shadow-lg">
+                    {filteredBarangays.length === 0 ? (
+                      <div className="p-3 text-gray-500">No results found</div>
+                    ) : (
+                      filteredBarangays.map((barangay) => (
+                        <Combobox.Option
+                          key={barangay.code}
+                          value={barangay.name}
+                          className={({ active }) =>
+                            `cursor-pointer px-4 py-2 ${active ? "bg-orange-500 text-white" : ""}`
+                          }
+                        >
+                          {barangay.name}
+                        </Combobox.Option>
+                      ))
+                    )}
+                  </Combobox.Options>
+                </div>
+              </Combobox>
+            </div>
 
             {/* Password Field */}
             <div className="relative">
