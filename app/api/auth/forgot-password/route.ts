@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
     // Save token to DB
     await Customer.updateOne(
       { email },
-      { $set: { resetToken: token, resetTokenExpires: expires } }
+      { $set: { resetToken: token, resetTokenExpires: expires } },
     );
 
     // Send reset email
@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
       to: email,
       subject: "Reset Your Password",
       html: `
-        <p>Hello ${user.name},</p>
+        <p>Hello ${user.firstName},</p>
         <p>Click the link below to reset your password. This link expires in 30 minutes.</p>
         <a href="${resetLink}" style="display:inline-block;padding:10px 20px;background:#f97316;color:white;text-decoration:none;border-radius:5px;">Reset Password</a>
         <p>If you did not request this, ignore this email.</p>

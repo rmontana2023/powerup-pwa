@@ -72,7 +72,8 @@ export default function ResetPasswordPage() {
           />
           {password && !isPasswordValid && (
             <p className="text-xs text-red-500">
-              Password must be at least 8 characters and contain letters and numbers
+              Password must be at least 8 characters and contain letters, numbers, and special
+              characters
             </p>
           )}
           <button

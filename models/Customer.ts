@@ -35,6 +35,9 @@ const customerSchema = new mongoose.Schema(
     resetToken: { type: String }, // 🔑 password reset token
     resetTokenExpires: { type: Date }, // ⏱ token expiration
     lastOtpRequest: { type: Date, default: null },
+    pendingEmail: { type: String },
+    emailChangeOtp: { type: String },
+    emailChangeOtpExpires: { type: Date },
   },
   { timestamps: true },
 );
