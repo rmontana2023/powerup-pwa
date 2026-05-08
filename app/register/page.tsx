@@ -666,7 +666,7 @@ export default function RegisterPage() {
                   </Combobox.Button>
 
                   {/* OPTIONS */}
-                  <Combobox.Options className="absolute z-10 mt-1 max-h-60 w-full overflow-auto bg-white border border-gray-200 rounded-lg shadow-lg">
+                  <Combobox.Options className="absolute z-10 mt-1 max-h-60 w-full overflow-auto bg-black border border-gray-500 rounded-lg shadow-lg">
                     {filteredBarangays.length === 0 ? (
                       <div className="p-3 text-gray-500">No results found</div>
                     ) : (
