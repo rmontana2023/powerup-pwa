@@ -54,7 +54,7 @@ export default function AboutUsPage() {
           <ul className="list-disc pl-5 space-y-1">
             <li>Earn points every time you load fuel</li>
             <li>Points never expire</li>
-            <li>Redeem perks, promos, and surprises made just for you 🎉</li>
+            <li>Redeem perks, promos, and surprises made just for you</li>
           </ul>
 
           <p className="font-semibold">It’s simple: Gas up. Scan. Earn. Repeat.</p>
@@ -65,7 +65,7 @@ export default function AboutUsPage() {
             watch your points grow.
           </p>
 
-          <p>Because at Power Up, we believe your loyalty deserves more power. 🚗⛽✨</p>
+          <p>Because at Power Up, we believe your loyalty deserves more power.</p>
         </div>
       </main>
     </LayoutWithNav>
