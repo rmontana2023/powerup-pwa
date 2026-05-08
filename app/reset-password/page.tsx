@@ -16,7 +16,7 @@ export default function ResetPasswordPage() {
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [msg, setMsg] = useState("");
-  const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/;
+  const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*?&.#_\-])[A-Za-z\d@$!%*?&.#_\-]{8,}$/;
 
   const isPasswordValid = passwordRegex.test(password);
 
@@ -24,7 +24,9 @@ export default function ResetPasswordPage() {
     e.preventDefault();
 
     if (!isPasswordValid) {
-      return setMsg("Password must be at least 8 characters and contain letters and numbers.");
+      return setMsg(
+        "Password must be at least 8 characters and contain letters, numbers, and special characters.",
+      );
     }
     if (password !== confirm) return setMsg("Passwords do not match");
 
@@ -76,7 +78,7 @@ export default function ResetPasswordPage() {
           <button
             type="button"
             onClick={() => setShowPassword(!showPassword)}
-            className="absolute inset-y-0 right-3 flex items-center text-gray-500 hover:text-gray-700"
+            className="absolute top-1/2 -translate-y-1/2 right-3 flex items-center text-gray-500 hover:text-gray-700"
           >
             {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
           </button>
@@ -96,7 +98,7 @@ export default function ResetPasswordPage() {
           <button
             type="button"
             onClick={() => setShowConfirm(!showConfirm)}
-            className="absolute inset-y-0 right-3 flex items-center text-gray-500 hover:text-gray-700"
+            className="absolute top-1/2 -translate-y-1/2 right-3 flex items-center text-gray-500 hover:text-gray-700"
           >
             {showConfirm ? <EyeOff size={18} /> : <Eye size={18} />}
           </button>
