@@ -11,7 +11,7 @@ type Redemption = {
   amount: number;
   type: "locked" | "redeemed";
   description?: string;
-  customerId: { fullName: string };
+  customerId: { firstName: string; lastName: string };
 };
 
 export default function RedemptionReportPage() {
