@@ -23,8 +23,17 @@ const transactionSchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
+    status: {
+      type: String,
+      enum: ["COMPLETED", "VOIDED"],
+      default: "COMPLETED",
+    },
+
+    voidedAt: Date,
+    voidedBy: String,
+    voidReason: String,
   },
-  { timestamps: { createdAt: "taggedAt", updatedAt: false } }
+  { timestamps: { createdAt: "taggedAt", updatedAt: false } },
 );
 
 export const Transaction =

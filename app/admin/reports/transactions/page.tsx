@@ -12,8 +12,11 @@ type Transaction = {
   amount: number;
   pointsEarned: number;
   source: string;
-  customerId: { fullName: string };
   stationId: { name: string };
+  status: "COMPLETED" | "VOIDED";
+  voidReason?: string;
+
+  customerId: { firstName: string; lastName: string };
 };
 
 export default function TransactionReportPage() {
@@ -189,6 +192,23 @@ export default function TransactionReportPage() {
                 <span>Points</span>
                 <span>{t.pointsEarned}</span>
               </div>
+              <td>
+                {t.status === "VOIDED" ? (
+                  <span className="px-2 py-1 text-xs bg-red-600 rounded">VOIDED</span>
+                ) : (
+                  <span className="px-2 py-1 text-xs bg-green-600 rounded">COMPLETED</span>
+                )}
+              </td>
+              {/* VOID REASON */}
+              <td className="text-left px-2">
+                {t.status === "VOIDED" ? (
+                  <span className="text-red-400 text-xs">
+                    {t.voidReason || "No reason provided"}
+                  </span>
+                ) : (
+                  "-"
+                )}
+              </td>
 
               <div className="flex justify-between text-sm">
                 <span>Source</span>
