@@ -129,6 +129,8 @@ export default function TransactionReportPage() {
               <th>Liters</th>
               <th>Amount</th>
               <th>Points</th>
+              <th>Status</th>
+              <th>Void Reason</th>
               <th>Source</th>
             </tr>
           </thead>
@@ -151,6 +153,22 @@ export default function TransactionReportPage() {
                   <td>{t.liters.toFixed(2)}</td>
                   <td>{t.amount}</td>
                   <td>{t.pointsEarned}</td>
+                  <td>
+                    {t.status === "VOIDED" ? (
+                      <span className="px-2 py-1 text-xs bg-red-600 rounded">VOIDED</span>
+                    ) : (
+                      <span className="px-2 py-1 text-xs bg-green-600 rounded">COMPLETED</span>
+                    )}
+                  </td>
+                  <td className="text-left px-2">
+                    {t.status === "VOIDED" ? (
+                      <span className="text-red-400 text-xs">
+                        {t.voidReason || "No reason provided"}
+                      </span>
+                    ) : (
+                      "-"
+                    )}
+                  </td>
                   <td>{t.source}</td>
                 </tr>
               ))

@@ -69,7 +69,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               className={`w-full flex items-center justify-between rounded-md px-3 py-2 text-sm font-medium transition-colors ${
                 pathname.startsWith("/admin/reports")
                   ? "bg-blue-600 text-white"
-                  : "text-gray-400 hover:text-white hover:bg-gray-800"
+                  : "text-[var(--text-accent)] hover:text-white hover:bg-gray-800"
               }`}
             >
               <span>Reports</span>
