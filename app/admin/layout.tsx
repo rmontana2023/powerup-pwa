@@ -3,19 +3,19 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
-import { Menu, X, LogOut } from "lucide-react";
 import logo from "@/public/assets/logo/powerup-new-logo.png";
+import { Menu, X, LogOut, ChevronDown, ChevronRight } from "lucide-react";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [reportsOpen, setReportsOpen] = useState(pathname.startsWith("/admin/reports"));
 
   const navItems = [
     { name: "Dashboard", path: "/admin/dashboard" },
     { name: "Customers", path: "/admin/customer" },
     { name: "Points", path: "/admin/points" },
-    { name: "Reports", path: "/admin/reports" },
   ];
 
   const handleLogout = async () => {
@@ -63,6 +63,48 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               {item.name}
             </Link>
           ))}
+          <div>
+            <button
+              onClick={() => setReportsOpen(!reportsOpen)}
+              className={`w-full flex items-center justify-between rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+                pathname.startsWith("/admin/reports")
+                  ? "bg-blue-600 text-white"
+                  : "text-gray-400 hover:text-white hover:bg-gray-800"
+              }`}
+            >
+              <span>Reports</span>
+
+              {reportsOpen ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
+            </button>
+
+            {reportsOpen && (
+              <div className="mt-2 ml-4 flex flex-col space-y-1">
+                <Link
+                  href="/admin/reports/transactions"
+                  onClick={() => setSidebarOpen(false)}
+                  className={`rounded-md px-3 py-2 text-sm transition-colors ${
+                    pathname === "/admin/reports/transactions"
+                      ? "bg-gray-700 text-white"
+                      : "text-gray-400 hover:text-white hover:bg-gray-800"
+                  }`}
+                >
+                  Transaction Reports
+                </Link>
+
+                <Link
+                  href="/admin/reports/redemptions"
+                  onClick={() => setSidebarOpen(false)}
+                  className={`rounded-md px-3 py-2 text-sm transition-colors ${
+                    pathname === "/admin/reports/redemptions"
+                      ? "bg-gray-700 text-white"
+                      : "text-gray-400 hover:text-white hover:bg-gray-800"
+                  }`}
+                >
+                  Redemption Reports
+                </Link>
+              </div>
+            )}
+          </div>
 
           {/* Logout Button */}
           <button
