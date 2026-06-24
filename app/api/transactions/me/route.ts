@@ -45,10 +45,12 @@ export async function GET(req: Request) {
       _id: t._id.toString(),
       type: "Transaction" as const,
       date: t.taggedAt,
-      points: t.pointsEarned,
+      points: t.status === "VOIDED" ? -t.pointsEarned : t.pointsEarned,
       liters: t.liters,
       amount: t.amount,
       station: t.stationId?.name || "Station",
+      status: t.status || "COMPLETED",
+      voidReason: t.voidReason || null,
     }));
 
     const rdMapped = redemptions.map((r) => ({
@@ -62,7 +64,7 @@ export async function GET(req: Request) {
 
     // 4️⃣ Merge + sort
     const combined = [...txMapped, ...rdMapped].sort(
-      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
     );
 
     return NextResponse.json({ transactions: combined });

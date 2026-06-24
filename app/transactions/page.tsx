@@ -14,6 +14,9 @@ interface Transaction {
   type: "Transaction" | "Redemption" | "Locked";
   description?: string;
   station?: string;
+
+  status?: "COMPLETED" | "VOIDED";
+  voidReason?: string;
 }
 
 interface User {
@@ -28,26 +31,45 @@ interface TransactionCardProps {
 }
 
 const TransactionCard: React.FC<TransactionCardProps> = ({ item }) => {
-  const color =
-    item.type === "Transaction" ? "green-400" : item.type === "Locked" ? "yellow-400" : "red-400";
+  const isVoided = item.status === "VOIDED";
+
+  const color = isVoided
+    ? "red-400"
+    : item.type === "Transaction"
+      ? "green-400"
+      : item.type === "Locked"
+        ? "yellow-400"
+        : "red-400";
 
   return (
     <div
       className={`flex justify-between items-center p-3 rounded-xl border transition-all duration-200 border-${color}/20 bg-${color}/10 hover:bg-${color}/20`}
     >
       <div className="flex flex-col">
-        <span className={`text-sm font-semibold text-${color}`}>{item.type}</span>
+        <span className={`text-sm font-semibold text-${color}`}>
+          {isVoided ? "Voided Transaction" : item.type}
+        </span>
+
         <span className="text-xs text-gray-300">
           {item.type === "Transaction"
-            ? `${item.liters ?? 0}L • ₱${item.amount ?? 0}`
-            : item.description ?? "Points redeemed"}
+            ? `${parseFloat(item.liters).toFixed(2) ?? 0}L • ₱${item.amount ?? 0}`
+            : (item.description ?? "Points redeemed")}
         </span>
+
+        {/* show void reason */}
+        {isVoided && item.voidReason && (
+          <span className="text-xs text-red-300 mt-1">Reason: {item.voidReason}</span>
+        )}
+
         <span className="text-[11px] text-gray-500">{new Date(item.date).toLocaleString()}</span>
       </div>
+
       <div className="text-right">
         <span className={`block text-sm font-bold text-${color}`}>
-          {item.points >= 0 ? `+${item.points}` : item.points} pts
+          {isVoided ? `-${item.points} pts` : item.points >= 0 ? `+${item.points}` : item.points}{" "}
+          pts
         </span>
+
         <span className="text-[11px] text-gray-400">{item.station || "Station"}</span>
       </div>
     </div>
@@ -109,7 +131,7 @@ export default function TransactionsPage() {
         cutoff = new Date(now);
         cutoff.setDate(now.getDate() - 1);
         return transactions.filter(
-          (t) => new Date(t.date).toDateString() === cutoff!.toDateString()
+          (t) => new Date(t.date).toDateString() === cutoff!.toDateString(),
         );
       case "3days":
         cutoff = new Date(now);
@@ -136,8 +158,8 @@ export default function TransactionsPage() {
 
     const res = await fetch(
       `/api/transactions/me?customerId=${customerId}&export=true&email=${encodeURIComponent(
-        user.email
-      )}`
+        user.email,
+      )}`,
     );
     const data = await res.json();
     alert(data.message || "Request sent successfully!");
