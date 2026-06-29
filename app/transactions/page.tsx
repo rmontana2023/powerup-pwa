@@ -52,7 +52,7 @@ const TransactionCard: React.FC<TransactionCardProps> = ({ item }) => {
 
         <span className="text-xs text-gray-300">
           {item.type === "Transaction"
-            ? `${parseFloat(item.liters).toFixed(2) ?? 0}L • ₱${item.amount ?? 0}`
+            ? `${(item.liters ?? 0).toFixed(2)}L • ₱${(item.amount ?? 0).toFixed(2)}`
             : (item.description ?? "Points redeemed")}
         </span>
 

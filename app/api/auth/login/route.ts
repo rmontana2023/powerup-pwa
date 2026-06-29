@@ -8,7 +8,11 @@ import { User } from "@/models/User";
 
 export async function POST(req: Request) {
   try {
-    const { identifier, password } = await req.json();
+    const body = await req.json();
+
+    const identifier = body.identifier.trim().toLowerCase();
+    console.log(identifier, "identifier");
+    const password = body.password;
     await connectDB();
 
     // 1️⃣ Try finding admin in User collection first
@@ -19,7 +23,7 @@ export async function POST(req: Request) {
     if (identifier.includes("@")) {
       user = await User.findOne({ email: identifier });
     }
-
+    console.log(user, "User");
     // 2️⃣ CUSTOMER LOGIN → email or phone
     if (!user) {
       user = await Customer.findOne({
@@ -35,6 +39,11 @@ export async function POST(req: Request) {
 
     // 4️⃣ Compare passwords
     const isMatch = await bcrypt.compare(password, user.password);
+    const test = await bcrypt.hash("P@ssw0rd", 10);
+    console.log(test);
+    console.log("Input password:", password);
+    console.log("Stored hash:", user.password);
+    console.log("Match result:", isMatch);
     if (!isMatch) {
       return NextResponse.json({ error: "Invalid email or password" }, { status: 401 });
     }
