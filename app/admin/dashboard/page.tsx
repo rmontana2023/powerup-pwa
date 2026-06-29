@@ -49,8 +49,8 @@ export default function AdminDashboard() {
       {/* HEADER */}
       <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 bg-white rounded-xl shadow-sm p-5">
         <div>
-          <h1 className="text-2xl font-bold text-gray-800">Welcome, {user?.email}</h1>
-          <p className="text-sm text-gray-500 capitalize">{user?.role} Dashboard</p>
+          <h1 className="text-2xl font-bold text-gray-800">Welcome</h1>
+          {/* <p className="text-sm text-gray-500 capitalize">{user?.role} Dashboard</p> */}
         </div>
 
         <select
