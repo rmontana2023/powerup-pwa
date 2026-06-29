@@ -11,6 +11,8 @@ interface TxDoc {
   pointsEarned: number;
   liters: number;
   amount: number;
+  status: string;
+  voidReason: string;
   stationId?: { name: string };
 }
 
