@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
-import { connectToDB } from "@/lib/mongo";
+import { connectDB } from "@/lib/db";
 import { Transaction } from "@/models/Transaction";
 import { Redemption } from "@/models/Redemption";
 import { Customer } from "@/models/Customer";
 
 export async function GET(req: Request) {
-  await connectToDB();
+  await connectDB();
 
   const { searchParams } = new URL(req.url);
   const filter = searchParams.get("filter") || "daily";
