@@ -14,9 +14,9 @@ interface Transaction {
   type: "Transaction" | "Redemption" | "Locked";
   description?: string;
   station?: string;
-
   status?: "COMPLETED" | "VOIDED";
   voidReason?: string;
+  isVoided?: boolean;
 }
 
 interface User {
@@ -31,22 +31,31 @@ interface TransactionCardProps {
 }
 
 const TransactionCard: React.FC<TransactionCardProps> = ({ item }) => {
-  const isVoided = item.status === "VOIDED";
+  const isVoided = item.isVoided || item.status === "VOIDED";
 
   const color = isVoided
-    ? "red-400"
+    ? "red"
     : item.type === "Transaction"
-      ? "green-400"
+      ? "green"
       : item.type === "Locked"
-        ? "yellow-400"
-        : "red-400";
+        ? "yellow"
+        : "orange";
 
   return (
     <div
-      className={`flex justify-between items-center p-3 rounded-xl border transition-all duration-200 border-${color}/20 bg-${color}/10 hover:bg-${color}/20`}
+      className={`flex justify-between items-center p-3 rounded-xl border transition-all duration-200
+      ${
+        isVoided
+          ? "border-red-500/20 bg-red-500/10 hover:bg-red-500/20"
+          : item.type === "Transaction"
+            ? "border-green-500/20 bg-green-500/10 hover:bg-green-500/20"
+            : item.type === "Locked"
+              ? "border-yellow-500/20 bg-yellow-500/10 hover:bg-yellow-500/20"
+              : "border-orange-500/20 bg-orange-500/10 hover:bg-orange-500/20"
+      }`}
     >
       <div className="flex flex-col">
-        <span className={`text-sm font-semibold text-${color}`}>
+        <span className={`text-sm font-semibold text-${color}-400`}>
           {isVoided ? "Voided Transaction" : item.type}
         </span>
 
@@ -56,7 +65,6 @@ const TransactionCard: React.FC<TransactionCardProps> = ({ item }) => {
             : (item.description ?? "Points redeemed")}
         </span>
 
-        {/* show void reason */}
         {isVoided && item.voidReason && (
           <span className="text-xs text-red-300 mt-1">Reason: {item.voidReason}</span>
         )}
@@ -65,9 +73,8 @@ const TransactionCard: React.FC<TransactionCardProps> = ({ item }) => {
       </div>
 
       <div className="text-right">
-        <span className={`block text-sm font-bold text-${color}`}>
-          {isVoided ? `-${item.points} pts` : item.points >= 0 ? `+${item.points}` : item.points}{" "}
-          pts
+        <span className={`block text-sm font-bold ${isVoided ? "text-red-400" : "text-green-400"}`}>
+          {item.type === "Redemption" ? `-${item.points} pts` : `+${item.points} pts`}
         </span>
 
         <span className="text-[11px] text-gray-400">{item.station || "Station"}</span>
