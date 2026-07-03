@@ -14,6 +14,7 @@ interface TxDoc {
   status: string;
   voidReason: string;
   stationId?: { name: string };
+  receiptNo?: string;
 }
 
 interface RdDoc {
@@ -49,6 +50,7 @@ export async function GET(req: Request) {
       date: t.taggedAt,
       points: t.pointsEarned,
       isVoided: t.status === "VOIDED",
+      receiptNo: t.receiptNo, // add this
       liters: t.liters,
       amount: t.amount,
       station: t.stationId?.name || "Station",

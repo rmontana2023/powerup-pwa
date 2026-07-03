@@ -17,6 +17,7 @@ interface Transaction {
   status?: "COMPLETED" | "VOIDED";
   voidReason?: string;
   isVoided?: boolean;
+  receiptNo?: string;
 }
 
 interface User {
@@ -60,9 +61,14 @@ const TransactionCard: React.FC<TransactionCardProps> = ({ item }) => {
         </span>
 
         <span className="text-xs text-gray-300">
-          {item.type === "Transaction"
-            ? `${(item.liters ?? 0).toFixed(2)}L • ₱${(item.amount ?? 0).toFixed(2)}`
-            : (item.description ?? "Points redeemed")}
+          {item.type === "Transaction" ? (
+            <>
+              Order #{item.receiptNo || "N/A"} • {(item.liters ?? 0).toFixed(2)}L • ₱
+              {(item.amount ?? 0).toFixed(2)}
+            </>
+          ) : (
+            (item.description ?? "Points redeemed")
+          )}
         </span>
 
         {isVoided && item.voidReason && (
@@ -74,7 +80,11 @@ const TransactionCard: React.FC<TransactionCardProps> = ({ item }) => {
 
       <div className="text-right">
         <span className={`block text-sm font-bold ${isVoided ? "text-red-400" : "text-green-400"}`}>
-          {item.type === "Redemption" ? `-${item.points} pts` : `+${item.points} pts`}
+          {isVoided
+            ? `${Math.abs(item.points)} pts`
+            : item.type === "Redemption"
+              ? `-${Math.abs(item.points)} pts`
+              : `${Math.abs(item.points)} pts`}
         </span>
 
         <span className="text-[11px] text-gray-400">{item.station || "Station"}</span>
