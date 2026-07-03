@@ -23,6 +23,8 @@ interface RdDoc {
   points: number;
   description?: string;
   stationId?: string;
+  amount: number;
+  type: "locked" | "redeemed";
 }
 export async function GET(req: Request) {
   try {
@@ -60,9 +62,10 @@ export async function GET(req: Request) {
 
     const rdMapped = redemptions.map((r) => ({
       _id: r._id.toString(),
-      type: "Redemption" as const,
+      type: r.type === "locked" ? "Locked" : ("Redemption" as const),
       date: r.createdAt,
       points: -r.points,
+      amount: r.amount,
       description: r.description || "Points redeemed",
       station: r.stationId || "Station",
     }));

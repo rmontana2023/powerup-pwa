@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Redemption } from "@/models/Redemption";
+import "@/models/Customer"; // ✅ IMPORTANT FIX
 import { connectDB } from "@/lib/db";
 
 export async function GET(req: NextRequest) {

@@ -33,6 +33,7 @@ interface TransactionCardProps {
 
 const TransactionCard: React.FC<TransactionCardProps> = ({ item }) => {
   const isVoided = item.isVoided || item.status === "VOIDED";
+  console.log("TransactionCard item:", item);
 
   const color = isVoided
     ? "red"
@@ -66,8 +67,10 @@ const TransactionCard: React.FC<TransactionCardProps> = ({ item }) => {
               Order #{item.receiptNo || "N/A"} • {(item.liters ?? 0).toFixed(2)}L • ₱
               {(item.amount ?? 0).toFixed(2)}
             </>
+          ) : item.type === "Locked" ? (
+            <>Voucher Created • ₱{(item.amount ?? 0).toFixed(2)}</>
           ) : (
-            (item.description ?? "Points redeemed")
+            <>Voucher Redeemed • ₱{(item.amount ?? 0).toFixed(2)}</>
           )}
         </span>
 
@@ -79,15 +82,23 @@ const TransactionCard: React.FC<TransactionCardProps> = ({ item }) => {
       </div>
 
       <div className="text-right">
-        <span className={`block text-sm font-bold ${isVoided ? "text-red-400" : "text-green-400"}`}>
-          {isVoided
+        <span
+          className={`block text-sm font-bold ${
+            isVoided
+              ? "text-red-400"
+              : item.type === "Transaction"
+                ? "text-green-400"
+                : item.type === "Locked"
+                  ? "text-yellow-400"
+                  : "text-orange-400"
+          }`}
+        >
+          {item.type === "Transaction"
             ? `${Math.abs(item.points)} pts`
-            : item.type === "Redemption"
-              ? `-${Math.abs(item.points)} pts`
-              : `${Math.abs(item.points)} pts`}
+            : `₱${(item.amount ?? 0).toFixed(2)}`}
         </span>
 
-        <span className="text-[11px] text-gray-400">{item.station || "Station"}</span>
+        <span className="text-[11px] text-gray-400">{item.description}</span>
       </div>
     </div>
   );
