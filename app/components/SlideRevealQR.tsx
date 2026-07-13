@@ -4,11 +4,23 @@ import { QRCodeSVG } from "qrcode.react";
 import { X } from "lucide-react";
 
 interface SlideToRevealQRProps {
-  user: { name?: string; qrCode?: string; _id?: string };
+  user: {
+    name?: string;
+    qrCode?: string;
+    _id?: string;
+  };
+  offlineMode?: boolean;
+  lastSync?: string;
+  autoOpen?: boolean;
 }
 
-export default function SlideToRevealQR({ user }: SlideToRevealQRProps) {
-  const [showSlide, setShowSlide] = useState(false);
+export default function SlideToRevealQR({
+  user,
+  offlineMode = false,
+  lastSync,
+  autoOpen = false,
+}: SlideToRevealQRProps) {
+  const [showSlide, setShowSlide] = useState(autoOpen);
   const [revealed, setRevealed] = useState(false);
   const [redeemTimer, setRedeemTimer] = useState(0);
   const [progress, setProgress] = useState(0); // 0..100
@@ -18,18 +30,28 @@ export default function SlideToRevealQR({ user }: SlideToRevealQRProps) {
   const pointerIdRef = useRef<number | null>(null);
   const rafRef = useRef<number | null>(null);
 
+  useEffect(() => {
+    if (autoOpen) {
+      setShowSlide(true);
+    }
+  }, [autoOpen]);
   // countdown
   useEffect(() => {
+    if (offlineMode) return;
+
     let t: NodeJS.Timeout;
+
     if (revealed && redeemTimer > 0) {
       t = setInterval(() => setRedeemTimer((s) => s - 1), 1000);
     }
+
     if (redeemTimer === 0 && revealed) {
       setShowSlide(false);
       setRevealed(false);
     }
+
     return () => clearInterval(t);
-  }, [revealed, redeemTimer]);
+  }, [revealed, redeemTimer, offlineMode]);
 
   // helper: set progress safely via rAF for smoothness
   const setProgressSafe = (v: number) => {
@@ -103,7 +125,9 @@ export default function SlideToRevealQR({ user }: SlideToRevealQRProps) {
       setProgressSafe(100);
       setTimeout(() => setProgress(0), 300);
       setRevealed(true);
-      setRedeemTimer(30);
+      if (!offlineMode) {
+        setRedeemTimer(30);
+      }
     } else {
       // smooth reset
       setProgressSafe(0);
@@ -120,62 +144,68 @@ export default function SlideToRevealQR({ user }: SlideToRevealQRProps) {
   return (
     <>
       {/* Floating QR Button */}
-      <button
-        onClick={() => {
-          setShowSlide(true);
-          setRevealed(false);
-          setRedeemTimer(0);
-          setProgress(0);
-        }}
-        className="fixed bottom-10 left-1/2 -translate-x-1/2 bg-[var(--accent)] hover:bg-[var(--accent-dark)] text-black rounded-full w-16 h-16 flex items-center justify-center shadow-lg z-50 border-4 border-[var(--background)] transition"
-        aria-label="Open QR"
-      >
-        <QRCodeSVG value={user?.qrCode || user?._id || "NO-QR"} size={32} />
-      </button>
+      {!autoOpen && (
+        <button
+          onClick={() => {
+            setShowSlide(true);
+            setRevealed(false);
+            setRedeemTimer(0);
+            setProgress(0);
+          }}
+          className="fixed bottom-10 left-1/2 -translate-x-1/2 bg-[var(--accent)] hover:bg-[var(--accent-dark)] text-black rounded-full w-16 h-16 flex items-center justify-center shadow-lg z-50 border-4 border-[var(--background)] transition"
+          aria-label="Open QR"
+        >
+          <QRCodeSVG value={user?.qrCode || user?._id || "NO-QR"} size={32} />
+        </button>
+      )}
 
       {/* Fullscreen Slide-to-Reveal */}
       {showSlide && (
         <div
-          className="fixed inset-0 z-[60] flex flex-col items-center justify-center bg-[var(--background)] text-[var(--foreground)]"
+          className="fixed inset-0 z-[60] flex flex-col bg-[var(--background)] text-[var(--foreground)]"
           role="dialog"
           aria-modal="true"
         >
           {/* close */}
-          <button
-            className="absolute top-5 right-5 text-[var(--text-muted)] hover:text-[var(--foreground)] transition z-40"
-            onClick={() => {
-              setShowSlide(false);
-              setRevealed(false);
-              setRedeemTimer(0);
-            }}
-            aria-label="Close"
-          >
-            <X className="w-7 h-7" />
-          </button>
+          {!offlineMode && (
+            <button
+              className="absolute top-5 right-5 ..."
+              onClick={() => {
+                setShowSlide(false);
+                setRevealed(false);
+                setRedeemTimer(0);
+              }}
+            >
+              <X className="w-7 h-7" />
+            </button>
+          )}
 
           {/* name */}
-          <h2 className="absolute top-8 text-2xl font-semibold text-[var(--accent)] z-40">
-            {user?.name}
-          </h2>
+          <div className="flex-1 flex flex-col items-center justify-start pt-20 px-6">
+            <h2 className="text-2xl font-semibold text-[var(--accent)] mb-8">{user?.name}</h2>
 
-          {/* big QR background (slightly blurred until reveal) */}
-          <div
-            className={`absolute inset-0 flex items-center justify-center transition-all duration-500 ease-in-out pointer-events-none ${
-              revealed ? "blur-0 opacity-100 bg-white" : "blur-md opacity-80"
-            }`}
-          >
-            <QRCodeSVG
-              value={user?.qrCode || user?._id || "NO-QR"}
-              size={300}
-              bgColor="#ffffff"
-              fgColor="#000000"
-              level="H"
-            />
+            <div className="w-[340px] h-[340px] flex items-center justify-center">
+              <div
+                className={`transition-all duration-500 ${
+                  revealed ? "blur-0 scale-100 opacity-100" : "blur-md scale-95 opacity-70"
+                }`}
+              >
+                <div className="bg-white rounded-3xl p-6 shadow-2xl">
+                  <QRCodeSVG
+                    value={user?.qrCode || user?._id || "NO-QR"}
+                    size={300}
+                    bgColor="#ffffff"
+                    fgColor="#000000"
+                    level="H"
+                  />
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* slide control */}
           {!revealed && (
-            <div className="absolute bottom-24 w-[92%] max-w-lg px-4 z-50">
+            <div className="absolute bottom-70 left-1/2 -translate-x-1/2 w-[92%] max-w-lg px-6 z-50">
               <p className="text-[var(--foreground)] font-medium mb-3 text-center text-lg">
                 Slide to reveal QR
               </p>
@@ -224,7 +254,34 @@ export default function SlideToRevealQR({ user }: SlideToRevealQRProps) {
           )}
 
           {/* revealed timer */}
-          {revealed && (
+          {offlineMode && (
+            <div className="absolute bottom-6 w-full px-6 z-50">
+              <div className="max-w-md mx-auto rounded-2xl border border-yellow-500 bg-yellow-500/10 backdrop-blur-md p-4 text-center">
+                <h3 className="font-semibold text-yellow-400">No Internet Connection</h3>
+
+                <p className="mt-2 text-sm text-gray-300">
+                  You can still present your QR Code for scanning while offline. Rewards, vouchers
+                  and transaction history will sync once your internet connection is restored.
+                </p>
+
+                {lastSync && (
+                  <p className="mt-3 text-xs text-gray-500">
+                    Last synced:
+                    <br />
+                    {new Date(lastSync).toLocaleString()}
+                  </p>
+                )}
+
+                <button
+                  onClick={() => window.location.reload()}
+                  className="mt-4 w-full rounded-xl bg-green-600 py-3 font-medium transition hover:bg-green-700"
+                >
+                  Refresh Connection
+                </button>
+              </div>
+            </div>
+          )}
+          {revealed && !offlineMode && (
             <div className="absolute bottom-20 text-center z-50">
               <p className="text-5xl font-bold text-[var(--accent)]">{redeemTimer}s</p>
               <p className="text-sm text-[var(--text-muted)]">QR will close automatically</p>

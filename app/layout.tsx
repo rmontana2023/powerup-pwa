@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import AppWrapper from "./components/AppWrapper";
+import PWAClient from "./components/PWAClient";
+
 export const metadata: Metadata = {
   title: "PowerUp Rewards",
   description: "Track your fuel points and rewards.",
@@ -25,7 +27,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="apple-touch-icon" href="/icons/app_icon.png" />
         <link rel="manifest" href="/manifest.json" />
       </head>
+
       <body className="bg-gray-50 text-gray-900">
+        <PWAClient />
         <AppWrapper>{children}</AppWrapper>
       </body>
     </html>

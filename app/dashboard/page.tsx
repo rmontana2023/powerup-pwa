@@ -71,6 +71,7 @@ export default function DashboardPage() {
         return;
       }
       const data = await res.json();
+      console.log("🚀 ~ fetchUser ~ data:", data);
       setUser(data.user);
       const totalPoints = data.user?.totalPoints ?? 0;
       // fetch unredeemed vouchers
@@ -80,6 +81,11 @@ export default function DashboardPage() {
       console.log("🚀 ~ fetchUser ~ unredeemed:", unredeemed);
       const sumLocked = unredeemed.reduce((sum: number, v: any) => sum + (v.pointsLocked || 0), 0);
       console.log("🚀 ~ fetchUser ~ sumLocked:", sumLocked);
+
+      localStorage.setItem("customerQR", data.user.qrCode);
+      localStorage.setItem("customerName", data.user.firstName + " " + data.user.lastName);
+
+      localStorage.setItem("lastSync", new Date().toLocaleString("en-PH"));
 
       setUser(data.user);
       setLockedPoints(sumLocked);
