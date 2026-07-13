@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import newlogo from "../../public/assets/logo/powerup-new-logo.png";
 import { Eye, EyeOff } from "lucide-react";
+import { cacheOfflineUser } from "@/lib/offline-cache";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -74,10 +75,10 @@ export default function LoginPage() {
       }
       // ✅ Save user info locally
       if (data.user) {
-        localStorage.setItem("user", JSON.stringify(data.user));
-        localStorage.setItem("customerId", data.user._id || data.user.id);
-        localStorage.setItem("token", data.token); // store JWT
-        // ✅ Redirect based on role
+        // after successful login or profile fetch
+        cacheOfflineUser(data.user);
+
+        // Redirect
         if (data.user.role === "admin") {
           router.push("/admin/dashboard");
         } else {
@@ -232,11 +233,11 @@ export default function LoginPage() {
                 {isSending
                   ? "Sending..."
                   : cooldown > 0
-                  ? `Resend in ${Math.floor(cooldown / 60)}:${String(cooldown % 60).padStart(
-                      2,
-                      "0"
-                    )}`
-                  : "Send Reset Link"}
+                    ? `Resend in ${Math.floor(cooldown / 60)}:${String(cooldown % 60).padStart(
+                        2,
+                        "0",
+                      )}`
+                    : "Send Reset Link"}
               </button>
             </form>
 
