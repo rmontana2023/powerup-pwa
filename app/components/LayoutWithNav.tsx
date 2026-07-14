@@ -36,11 +36,15 @@ const sidebarMenu = [
 ];
 
 export default function LayoutWithNav({
-  children,
-  user,
-}: {
-  children: React.ReactNode;
-  user?: any;
+    children,
+    user,
+    offlineMode = false,
+    autoOpenQR = false,
+}:{
+    children: React.ReactNode;
+    user?: any;
+    offlineMode?: boolean;
+    autoOpenQR?: boolean;
 }) {
   const router = useRouter();
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -186,8 +190,6 @@ export default function LayoutWithNav({
               {/* Logout */}
               <button
                 onClick={() => {
-                  localStorage.removeItem("user");
-                  localStorage.removeItem("customerId");
                   localStorage.removeItem("token");
                   router.push("/login");
                 }}
@@ -238,7 +240,13 @@ export default function LayoutWithNav({
       </nav>
 
       {/* Slide-to-Reveal QR */}
-      {user && <SlideToRevealQR user={user} />}
+      {user && <SlideToRevealQR
+        user={user}
+        offlineMode={offlineMode}
+        lastSync={localStorage.getItem("lastSync") || ""}
+        autoOpen={autoOpenQR}
+
+    />}
     </>
   );
 }

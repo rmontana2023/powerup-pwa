@@ -56,6 +56,27 @@ export default function RewardsPage() {
   const voucherRef = useRef<HTMLDivElement | null>(null);
   const [lockedPoints, setLockedPoints] = useState(0);
 
+  const [offlineMode, setOfflineMode] = useState(false);
+    const autoOpenQR = offlineMode;
+      
+    
+    
+    useEffect(() => {
+      // Set initial status after component mounts
+      setOfflineMode(!navigator.onLine);
+    
+      const offline = () => setOfflineMode(true);
+      const online = () => setOfflineMode(false);
+    
+      window.addEventListener("offline", offline);
+      window.addEventListener("online", online);
+    
+      return () => {
+        window.removeEventListener("offline", offline);
+        window.removeEventListener("online", online);
+      };
+    }, []);
+
   useEffect(() => {
     async function fetchUser() {
       const res = await fetch("/api/auth/me");
@@ -262,7 +283,7 @@ export default function RewardsPage() {
   };
 
   return (
-    <LayoutWithNav user={user}>
+    <LayoutWithNav user={user} offlineMode={offlineMode} autoOpenQR={autoOpenQR}>
       <main className="min-h-screen bg-[var(--background)] text-[var(--foreground)] flex flex-col items-center px-4 py-6 pb-24">
         {/* Header */}
         <div className="w-full max-w-md flex justify-center items-center mb-6">

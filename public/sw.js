@@ -120,7 +120,12 @@ async function pageStrategy(request) {
 
   if (response) return response;
 
-  return caches.match("/offline");
+
+const dashboard = await cache.match("/dashboard");
+
+if (dashboard) return dashboard;
+
+return caches.match("/");
 }
 
 async function networkFirst(request, cacheName) {

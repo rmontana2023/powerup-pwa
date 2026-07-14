@@ -63,34 +63,113 @@ export default function DashboardPage() {
   const [lockedPoints, setLockedPoints] = useState(0);
   const [totalPoints, setTotalPoints] = useState(0);
 
+  const [offlineMode, setOfflineMode] = useState(false);
+
+  const autoOpenQR = offlineMode;
+  
+
+
+useEffect(() => {
+  // Set initial status after component mounts
+  setOfflineMode(!navigator.onLine);
+
+  const offline = () => setOfflineMode(true);
+  const online = () => setOfflineMode(false);
+
+  window.addEventListener("offline", offline);
+  window.addEventListener("online", online);
+
+  return () => {
+    window.removeEventListener("offline", offline);
+    window.removeEventListener("online", online);
+  };
+}, []);
+
   useEffect(() => {
     async function fetchUser() {
-      const res = await fetch("/api/auth/me");
-      if (!res.ok) {
-        router.push("/login");
-        return;
+      try {
+        const res = await fetch("/api/auth/me");
+
+        if (!res.ok) {
+          router.push("/login");
+          return;
+        }
+
+        const data = await res.json();
+
+        localStorage.setItem(
+          "lastSync",
+          new Date().toLocaleString("en-PH")
+        );
+
+        setUser(data.user);
+
+        const totalPoints = data.user?.totalPoints ?? 0;
+
+        const voucherRes = await fetch(
+          "/api/vouchers?customerId=" + data.user._id
+        );
+
+        const voucherData = await voucherRes.json();
+
+        const unredeemed = voucherData.vouchers.filter(
+          (v: any) => !v.redeemed
+        );
+
+        const locked = unredeemed.reduce(
+          (sum: number, v: any) => sum + (v.pointsLocked || 0),
+          0
+        );
+
+        setLockedPoints(locked);
+        setTotalPoints(totalPoints);
+        localStorage.setItem(
+          "user",
+          JSON.stringify(data.user)
+        );
+
+        localStorage.setItem(
+          "lockedPoints",
+          String(locked)
+        );
+
+        localStorage.setItem(
+          "totalPoints",
+          String(totalPoints)
+        );
+
+        localStorage.setItem("customerQR", data.user.qrCode);
+        localStorage.setItem(
+          "customerName",
+          data.user.firstName + " " + data.user.lastName
+        );
+
+        setLoading(false);
+      } catch (err) {
+
+        console.log("Offline mode");
+
+        const cached = localStorage.getItem("user");
+
+        if (!cached) {
+          router.push("/login");
+          return;
+        }
+
+        const user = JSON.parse(cached);
+
+        setUser(user);
+
+        setLockedPoints(Number(localStorage.getItem("lockedPoints")) || 0);
+
+        setTotalPoints(
+          Number(localStorage.getItem("totalPoints")) ||
+          user.totalPoints ||
+          0
+        );
+
+        setLoading(false);
       }
-      const data = await res.json();
-      console.log("🚀 ~ fetchUser ~ data:", data);
-      setUser(data.user);
-      const totalPoints = data.user?.totalPoints ?? 0;
-      // fetch unredeemed vouchers
-      const resVouchers = await fetch("/api/vouchers?customerId=" + data.user._id);
-      const dataVouchers = await resVouchers.json();
-      const unredeemed = dataVouchers.vouchers.filter((v: any) => !v.redeemed);
-      console.log("🚀 ~ fetchUser ~ unredeemed:", unredeemed);
-      const sumLocked = unredeemed.reduce((sum: number, v: any) => sum + (v.pointsLocked || 0), 0);
-      console.log("🚀 ~ fetchUser ~ sumLocked:", sumLocked);
-
-      localStorage.setItem("customerQR", data.user.qrCode);
-      localStorage.setItem("customerName", data.user.firstName + " " + data.user.lastName);
-
-      localStorage.setItem("lastSync", new Date().toLocaleString("en-PH"));
-
-      setUser(data.user);
-      setLockedPoints(sumLocked);
-      setTotalPoints(totalPoints);
-      setLoading(false);
     }
     fetchUser();
   }, [router]);
@@ -207,7 +286,7 @@ export default function DashboardPage() {
   };
 
   return (
-    <LayoutWithNav user={user}>
+   <LayoutWithNav user={user} offlineMode={offlineMode} autoOpenQR={autoOpenQR}>
       <main className="min-h-screen bg-[var(--background)] text-[var(--foreground)] flex flex-col items-center px-4 py-6 relative">
         {/* Header */}
         <div className="w-full max-w-md flex justify-center items-center mb-6">

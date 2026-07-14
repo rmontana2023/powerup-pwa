@@ -5,6 +5,7 @@ import Image from "next/image";
 import newlogo from "../../public/assets/logo/powerup-new-logo.png";
 import { Eye, EyeOff } from "lucide-react";
 import { cacheOfflineUser } from "@/lib/offline-cache";
+import SlideToRevealQR from "@/app/components/SlideRevealQR";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -23,6 +24,22 @@ export default function LoginPage() {
   const RESEND_COOLDOWN = 5 * 60; // 5 minutes in seconds
 
   const [cooldown, setCooldown] = useState<number>(0);
+  const [offlineMode, setOfflineMode] = useState(false);
+
+useEffect(() => {
+  const update = () => setOfflineMode(!navigator.onLine);
+
+  update();
+
+  window.addEventListener("online", update);
+  window.addEventListener("offline", update);
+
+  return () => {
+    window.removeEventListener("online", update);
+    window.removeEventListener("offline", update);
+  };
+}, []);
+
 
   useEffect(() => {
     const lastSent = localStorage.getItem("forgotPasswordLastSent");
@@ -59,6 +76,7 @@ export default function LoginPage() {
     setError("");
 
     try {
+  
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -128,6 +146,25 @@ export default function LoginPage() {
   };
 
   // Login screen
+  const hasOfflineAccount =
+  !!localStorage.getItem("offlineSession") &&
+  !!localStorage.getItem("customerQR");
+ if (offlineMode && hasOfflineAccount) {
+  const user = {
+    name: localStorage.getItem("customerName") || "Customer",
+    qrCode: localStorage.getItem("customerQR") || "",
+    _id: localStorage.getItem("customerId") || "",
+  };
+
+  return (
+    <SlideToRevealQR
+      user={user}
+      offlineMode
+      lastSync={localStorage.getItem("lastSync") || ""}
+      autoOpen
+    />
+  );
+}
   return (
     <main className="flex items-center justify-center min-h-screen bg-[var(--background)] text-[var(--foreground)]">
       <div className="w-full max-w-md p-8">
@@ -135,8 +172,19 @@ export default function LoginPage() {
         <div className="flex flex-col items-center mb-8">
           <Image src={newlogo} alt="PowerUp Rewards" width={250} height={80} priority />
         </div>
+        {offlineMode && (
+            <div className="mb-5 rounded-xl border border-yellow-500 bg-yellow-500/10 p-3 text-center">
+              <p className="text-sm font-medium text-yellow-400">
+                You're offline
+              </p>
+              <p className="mt-1 text-xs text-gray-400">
+                If you've logged in on this device before, you'll be redirected to your offline QR automatically.
+              </p>
+            </div>
+          )}
 
         {/* Form */}
+        
         <form className="space-y-5" onSubmit={handleLogin}>
           <input
             type="text"

@@ -4,7 +4,7 @@ import { QRCodeSVG } from "qrcode.react";
 import { X } from "lucide-react";
 
 interface SlideToRevealQRProps {
-user: {
+  user: {
     name?: string;
     qrCode?: string;
     _id?: string;
@@ -16,10 +16,11 @@ user: {
 
 export default function SlideToRevealQR({
   user,
-  offlineMode = false,
+  offlineMode,
   lastSync,
-  autoOpen = false,
+  autoOpen,
 }: SlideToRevealQRProps) {
+  console.log("SlideToRevealQR props:", { user, offlineMode, lastSync, autoOpen });
   const [showSlide, setShowSlide] = useState(autoOpen);
   const [revealed, setRevealed] = useState(false);
   const [redeemTimer, setRedeemTimer] = useState(0);
@@ -175,7 +176,7 @@ export default function SlideToRevealQR({
 
           {/* name */}
           <h2 className="absolute top-8 text-2xl font-semibold text-[var(--accent)] z-40">
-            {user?.name}
+            {user?.name || "Customer"}
           </h2>
 
           {/* big QR background (slightly blurred until reveal) */}
@@ -274,12 +275,16 @@ export default function SlideToRevealQR({
                   <p className="mt-2 text-[11px] leading-4 text-gray-500">
                     Last synced:
                     <br />
-                    {new Date(lastSync).toLocaleString()}
+                    {new Date(lastSync).toLocaleString("en-PH")}
                   </p>
                 )}
 
                 <button
-                  onClick={() => window.location.reload()}
+                 onClick={() => {
+                    if (navigator.onLine) {
+                      window.location.reload();
+                    }
+                  }}
                   className="mt-3 w-full rounded-lg bg-green-600 py-2 text-sm font-medium transition hover:bg-green-700"
                 >
                   Refresh Connection
