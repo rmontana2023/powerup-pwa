@@ -99,3 +99,10 @@ button {
   will-change: transform;
   transform: translateY(0px);
 }
+.pt-safe {
+  padding-top: env(safe-area-inset-top);
+}
+
+.pb-safe {
+  padding-bottom: calc(env(safe-area-inset-bottom) + 16px);
+}
