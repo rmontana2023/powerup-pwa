@@ -38,6 +38,8 @@ export default function RegisterPage() {
     address: "",
     province: "",
     provinceCode: "",
+    street: "",
+    zipCode:"",
     city: "",
     cityCode: "",
     barangay: "",
@@ -62,6 +64,8 @@ export default function RegisterPage() {
   const [provinces, setProvinces] = useState<any[]>([]);
   const [cities, setCities] = useState<any[]>([]);
   const [barangays, setBarangays] = useState<any[]>([]);
+  const [street, setStreet] = useState("");
+  const [zipCode, setZipCode] = useState("");
   const [loadingCities, setLoadingCities] = useState(false);
   const [loadingBarangays, setLoadingBarangays] = useState(false);
 
@@ -275,7 +279,7 @@ export default function RegisterPage() {
         confirmButtonColor: "#f97316",
       });
     }
-    if (!form.province || !form.city || !form.barangay) {
+    if (!form.province || !form.city || !form.barangay || !form.street || !form.zipCode) {
       return Swal.fire({
         icon: "warning",
         title: "Address Required",
@@ -288,7 +292,6 @@ export default function RegisterPage() {
       form.birthDay,
     ).padStart(2, "0")}`;
 
-    form.birthDate = birthDate;
     // Birthdate validation
     const birthDateObj = new Date(form.birthDate);
     const today = new Date();
@@ -322,7 +325,26 @@ export default function RegisterPage() {
       const res = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify({
+            firstName: form.firstName,
+            middleName: form.middleName,
+            lastName: form.lastName,
+
+            gender: form.gender,
+            birthDate,
+
+            email: form.email,
+            phone: form.phone,
+
+            province: form.province,
+            city: form.city,
+            barangay: form.barangay,
+            street: form.street,
+            zipCode: form.zipCode,
+
+            password: form.password,
+            accountType: form.accountType,
+          }),
       });
 
       const data = await res.json();
@@ -685,6 +707,36 @@ export default function RegisterPage() {
                   </Combobox.Options>
                 </div>
               </Combobox>
+            </div>
+            {/* Street */}
+            <div className="w-full">
+              <input
+                type="text"
+                placeholder="Street / House No. / Purok"
+                value={form.street}
+                onChange={(e) =>
+                  setForm({
+                    ...form,
+                    street: e.target.value,
+                  })
+                }
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500"
+              />
+            </div>
+            <div className="w-full">
+              <input
+                type="text"
+                placeholder="ZIP Code"
+                value={form.zipCode}
+                maxLength={4}
+                onChange={(e) =>
+                  setForm({
+                    ...form,
+                    zipCode: e.target.value.replace(/\D/g, ""),
+                  })
+                }
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500"
+              />
             </div>
 
             {/* Password Field */}

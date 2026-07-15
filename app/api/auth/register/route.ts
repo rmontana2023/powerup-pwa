@@ -12,18 +12,34 @@ export async function POST(req: Request) {
       firstName,
       middleName,
       lastName,
-      gender, // ✅ NEW
+      gender,
+      birthDate,
       email,
       phone,
-      city,
+      street,
       barangay,
+      city,
+      province,
+      zipCode,
       password,
       accountType,
-      birthDate,
     } = await req.json();
 
-    if (!firstName || !lastName || !email || !password || !accountType || !birthDate) {
-      return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+   if (
+      !firstName ||
+      !lastName ||
+      !email ||
+      !password ||
+      !accountType ||
+      !birthDate ||
+      !barangay ||
+      !city ||
+      !province
+    ) {
+      return NextResponse.json(
+        { error: "Missing required fields" },
+        { status: 400 }
+      );
     }
 
     if (!/^09\d{9}$/.test(phone)) {
@@ -42,12 +58,18 @@ export async function POST(req: Request) {
       firstName,
       middleName,
       lastName,
-      gender, // ✅ NEW
+      gender,
       birthDate,
+
       email,
       phone,
-      city,
+
+      street,
       barangay,
+      city,
+      province,
+      zipCode,
+
       password,
       qrCode,
       accountType,
