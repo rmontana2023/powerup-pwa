@@ -47,7 +47,7 @@ export default function RewardsHistoryPage() {
           {/* Earn Points */}
           <section className="rounded-xl border border-[var(--border-color)] bg-[var(--card-bg)] p-5">
             <h2 className="text-lg font-semibold text-[var(--accent)] mb-4">
-              🔹 How to Earn Points (Use Your QR Code)
+              How to Earn Points (Use Your QR Code)
             </h2>
 
             <ol className="list-decimal list-inside space-y-2 text-sm leading-7 text-gray-300">
@@ -63,7 +63,7 @@ export default function RewardsHistoryPage() {
           {/* Generate Voucher */}
           <section className="rounded-xl border border-[var(--border-color)] bg-[var(--card-bg)] p-5">
             <h2 className="text-lg font-semibold text-[var(--accent)] mb-4">
-              🔹 How to Generate an E-Voucher
+              How to Generate an E-Voucher
             </h2>
 
             <ol className="list-decimal list-inside space-y-2 text-sm leading-7 text-gray-300">
@@ -78,7 +78,7 @@ export default function RewardsHistoryPage() {
           {/* Redeem Voucher */}
           <section className="rounded-xl border border-[var(--border-color)] bg-[var(--card-bg)] p-5">
             <h2 className="text-lg font-semibold text-[var(--accent)] mb-4">
-              🔹 How to Redeem Your E-Voucher
+              How to Redeem Your E-Voucher
             </h2>
 
             <ol className="list-decimal list-inside space-y-2 text-sm leading-7 text-gray-300">
@@ -93,7 +93,7 @@ export default function RewardsHistoryPage() {
           {/* Important Reminders */}
           <section className="rounded-xl border border-yellow-500/40 bg-yellow-500/10 p-5">
             <h2 className="text-lg font-semibold text-yellow-400 mb-4">
-              ℹ️ Important Reminders
+              Important Reminders
             </h2>
 
             <ul className="list-disc list-inside space-y-2 text-sm leading-7 text-gray-300">
