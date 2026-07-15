@@ -391,7 +391,6 @@ export default function RewardsPage() {
         )}
         {voucher && (
           <div
-            ref={voucherRef}
             className="fixed inset-0 flex items-center justify-center bg-black/70 backdrop-blur-md z-[60]"
           >
             {/* Blurred QR background */}
@@ -400,7 +399,7 @@ export default function RewardsPage() {
             </div>
 
             {/* Foreground Card */}
-            <div className="relative bg-neutral-900 text-white rounded-2xl p-6 shadow-2xl w-80 text-center border border-orange-500/30">
+            <div ref={voucherRef} className="relative bg-neutral-900 text-white rounded-2xl p-6 shadow-2xl w-80 text-center border border-orange-500/30">
               {/* Close */}
               <button
                 onClick={() => setVoucher(null)}
@@ -482,33 +481,39 @@ export default function RewardsPage() {
                     if (!voucherRef.current) return;
 
                     try {
-                      // Generate PNG from voucherRef
                       const dataUrl = await htmlToImage.toPng(voucherRef.current, {
                         cacheBust: true,
+                        pixelRatio: 4,
+                        backgroundColor: "#ffffff",
                       });
 
-                      // Convert DataURL to Blob
                       const response = await fetch(dataUrl);
                       const blob = await response.blob();
-                      const file = new File([blob], `${voucher.code}.png`, { type: blob.type });
 
-                      // Mobile-friendly save
-                      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                      const file = new File(
+                        [blob],
+                        `PowerUp-Voucher-${voucher.code}.png`,
+                        {
+                          type: "image/png",
+                        }
+                      );
+
+                      if (
+                        navigator.canShare &&
+                        navigator.canShare({ files: [file] })
+                      ) {
                         await navigator.share({
                           files: [file],
                           title: "PowerUp E-Voucher",
-                          text: `Here’s my PowerUp voucher worth ₱${voucher.amount}. Code: ${voucher.code}`,
                         });
                       } else {
-                        // fallback download
                         const link = document.createElement("a");
-                        link.download = `${voucher.code}.png`;
                         link.href = dataUrl;
+                        link.download = `PowerUp-Voucher-${voucher.code}.png`;
                         link.click();
                       }
-                    } catch (error) {
-                      console.error("Error downloading voucher:", error);
-                      alert("Failed to download voucher. Please try again.");
+                    } catch (err) {
+                      console.error(err);
                     }
                   }}
                   className="w-full max-w-[200px] bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium px-5 py-2.5 rounded-xl shadow-md transition-all active:scale-[0.97]"
@@ -516,6 +521,110 @@ export default function RewardsPage() {
                   Download Voucher
                 </button>
               </div>
+            </div>
+          </div>
+          
+        )}
+         {voucher && (
+        <div
+            ref={voucherRef}
+            className="fixed -left-[9999px] top-0 bg-white text-black w-[420px] rounded-3xl overflow-hidden shadow-2xl"
+          >
+            {/* Header */}
+            <div className="bg-orange-500 py-8 flex flex-col items-center">
+              <Image
+                src={newlogo}
+                alt="PowerUp"
+                width={90}
+                height={90}
+                priority
+              />
+
+              <h2 className="text-white text-3xl font-bold mt-4">
+                E-VOUCHER
+              </h2>
+
+              <p className="text-orange-100 text-sm mt-1">
+                PowerUp Rewards
+              </p>
+            </div>
+
+            {/* Body */}
+            <div className="p-8 flex flex-col items-center">
+
+              <div className="bg-white p-4 rounded-xl border-2 border-orange-500">
+                <QRCodeSVG
+                  value={voucher?.code || ""}
+                  size={220}
+                />
+              </div>
+
+              <h1 className="text-5xl font-extrabold text-orange-500 mt-6">
+                ₱{voucher?.amount}
+              </h1>
+
+              <p className="text-lg font-semibold text-gray-700">
+                Fuel Voucher
+              </p>
+
+              <div className="w-full border-t my-6" />
+
+              <div className="space-y-2 w-full text-sm">
+
+                <div className="flex justify-between">
+                  <span className="text-gray-500">
+                    Voucher Code
+                  </span>
+
+                  <span className="font-bold">
+                    {voucher?.code}
+                  </span>
+                </div>
+
+                <div className="flex justify-between">
+                  <span className="text-gray-500">
+                    Customer
+                  </span>
+
+                  <span className="font-semibold">
+                    {user?.name}
+                  </span>
+                </div>
+
+                <div className="flex justify-between">
+                  <span className="text-gray-500">
+                    Created
+                  </span>
+
+                  <span>
+                    {voucher &&
+                      new Date(voucher.createdAt).toLocaleDateString()}
+                  </span>
+                </div>
+
+                <div className="flex justify-between">
+                  <span className="text-gray-500">
+                    Valid Until
+                  </span>
+
+                  <span>
+                    {voucher &&
+                      new Date(voucher.expiresAt).toLocaleDateString()}
+                  </span>
+                </div>
+
+              </div>
+
+              <div className="mt-8 rounded-xl bg-red-50 border border-red-300 p-4 w-full">
+                <p className="text-center text-red-600 font-semibold text-sm">
+                  This voucher is valid for one-time redemption only.
+                </p>
+
+                <p className="text-center text-red-500 text-xs mt-2">
+                  Screenshots are not accepted by the cashier.
+                </p>
+              </div>
+
             </div>
           </div>
         )}

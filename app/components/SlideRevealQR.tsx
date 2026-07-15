@@ -6,6 +6,8 @@ import { X } from "lucide-react";
 interface SlideToRevealQRProps {
   user: {
     name?: string;
+    firstName?: string;
+    lastName?: string;
     qrCode?: string;
     _id?: string;
   };
@@ -176,7 +178,7 @@ export default function SlideToRevealQR({
 
           {/* name */}
           <h2 className="absolute top-8 text-2xl font-semibold text-[var(--accent)] z-40">
-            {user?.name || "Customer"}
+            {user?.firstName + " " + user?.lastName}
           </h2>
 
           {/* big QR background (slightly blurred until reveal) */}
