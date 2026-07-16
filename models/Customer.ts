@@ -37,16 +37,19 @@ const customerSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    barangayCode: String,
 
     city: {
       type: String,
       required: true,
     },
+    cityCode: String,
 
     province: {
       type: String,
       required: true,
     },
+    provinceCode: String,
 
     zipCode: {
       type: String,

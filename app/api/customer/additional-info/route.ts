@@ -9,31 +9,79 @@ export async function POST(req: Request) {
     await connectDB();
 
     const token = (await cookies()).get("token")?.value;
-    if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (!token) {
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401 }
+      );
+    }
 
-    if (!process.env.JWT_SECRET) throw new Error("JWT_SECRET not set");
+    if (!process.env.JWT_SECRET) {
+      throw new Error("JWT_SECRET not set");
+    }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET) as { id: string; role: string };
-    if (decoded.role !== "customer")
-      return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+    const decoded = jwt.verify(
+      token,
+      process.env.JWT_SECRET
+    ) as {
+      id: string;
+      role: string;
+    };
 
-    const body = await req.json();
-    const { province, city, barangay, street, zipCode } = body;
+    if (decoded.role !== "customer") {
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 403 }
+      );
+    }
+
+    const {
+      province,
+      provinceCode,
+      city,
+      cityCode,
+      barangay,
+      barangayCode,
+      street,
+      zipCode,
+    } = await req.json();
 
     const customer = await Customer.findById(decoded.id);
-    if (!customer) return NextResponse.json({ error: "Customer not found" }, { status: 404 });
+
+    if (!customer) {
+      return NextResponse.json(
+        { error: "Customer not found" },
+        { status: 404 }
+      );
+    }
 
     customer.province = province;
+    customer.provinceCode = provinceCode;
+
     customer.city = city;
+    customer.cityCode = cityCode;
+
     customer.barangay = barangay;
+    customer.barangayCode = barangayCode;
+
     customer.street = street;
     customer.zipCode = zipCode;
 
     await customer.save();
 
-    return NextResponse.json({ message: "Additional info saved", customer });
+    return NextResponse.json({
+      success: true,
+      message: "Additional information updated successfully.",
+      customer,
+    });
   } catch (err: any) {
     console.error("Additional info error:", err);
-    return NextResponse.json({ error: err.message || "Server error" }, { status: 500 });
+
+    return NextResponse.json(
+      {
+        error: err.message || "Server error",
+      },
+      { status: 500 }
+    );
   }
-}
+} 
