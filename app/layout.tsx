@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import AppWrapper from "./components/AppWrapper";
 import PWAClient from "./components/PWAClient";
+import UpdateChecker from "./components/UpdateChecker";
 
 export const metadata: Metadata = {
   title: "PowerUp Rewards",
@@ -29,6 +30,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
 
       <body className="bg-gray-50 text-gray-900">
+        <UpdateChecker />
         <PWAClient />
         <AppWrapper>{children}</AppWrapper>
       </body>
