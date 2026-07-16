@@ -22,6 +22,10 @@ interface AdditionalInfoForm {
   street: string;
   zipCode: string;
 }
+interface PSGCItem {
+  code: string;
+  name: string;
+}
 
 export default function AdditionalInfoPage() {
   const router = useRouter();
@@ -42,12 +46,12 @@ export default function AdditionalInfoPage() {
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [provinces, setProvinces] = useState<any[]>([]);
-  const [cities, setCities] = useState<any[]>([]);
-  const [barangays, setBarangays] = useState<any[]>([]);
   const [provinceQuery, setProvinceQuery] = useState("");
   const [cityQuery, setCityQuery] = useState("");
   const [barangayQuery, setBarangayQuery] = useState("");
+  const [provinces, setProvinces] = useState<PSGCItem[]>([]);
+  const [cities, setCities] = useState<PSGCItem[]>([]);
+  const [barangays, setBarangays] = useState<PSGCItem[]>([]);
 
 
   useEffect(() => {
@@ -173,12 +177,20 @@ const filteredProvinces =
 
             if (data.customer.provinceCode) {
                 const cityData = await fetchCities(data.customer.provinceCode);
-                setCities(cityData.sort((a,b)=>a.name.localeCompare(b.name)));
+                setCities(
+                  cityData.sort((a: PSGCItem, b: PSGCItem) =>
+                    a.name.localeCompare(b.name)
+                  )
+                );
             }
 
             if (data.customer.cityCode) {
                 const brgyData = await fetchBarangays(data.customer.cityCode);
-                setBarangays(brgyData.sort((a,b)=>a.name.localeCompare(b.name)));
+                setBarangays(
+                  brgyData.sort((a: PSGCItem, b: PSGCItem) =>
+                    a.name.localeCompare(b.name)
+                  )
+                );
             }
 
             setProvinceQuery("");
