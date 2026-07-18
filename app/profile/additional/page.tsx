@@ -128,21 +128,24 @@ export default function AdditionalInfoPage() {
         a.name.localeCompare(b.name)
       )
     )
-    setCityQuery("");
+   setCityQuery(selectedCity.name);
   } catch (err) {
     console.error(err)
   }
   }
-const filteredProvinces =
+  const filteredProvinces =
     provinceQuery === ""
       ? provinces
       : provinces.filter((p) => p.name.toLowerCase().includes(provinceQuery.toLowerCase()));
-
-  const filteredCities =
-    cityQuery === ""
-      ? cities
-      : cities.filter((c) => c.name.toLowerCase().includes(cityQuery.toLowerCase()));
-
+  
+ const filteredCities =
+  cityQuery.trim() === ""
+    ? cities
+    : cities.filter((city) =>
+        city.name
+          .toLowerCase()
+          .includes(cityQuery.toLowerCase())
+      );
   const filteredBarangays =
     barangayQuery === ""
       ? barangays
@@ -338,6 +341,8 @@ form.zipCode
               : "bg-white"
               }`}
               displayValue={(city: string) => city}
+              value={cityQuery}
+              onFocus={() => setCityQuery("")}
               onChange={(e) => setCityQuery(e.target.value)}
               placeholder="Select City / Municipality"
             />
@@ -388,7 +393,7 @@ form.zipCode
                 barangay: selectedBarangay?.name || "",
                 barangayCode: selectedBarangay?.code || ""
               }))
-              setBarangayQuery("");
+              setBarangayQuery(selectedBarangay.name);
             }}
           >
             <div className="relative">
@@ -402,6 +407,9 @@ form.zipCode
                 displayValue={(barangay: string) => barangay}
                 onChange={(e) => setBarangayQuery(e.target.value)}
                 placeholder="Select Barangay"
+                onFocus={() => {
+                    setBarangayQuery("");
+                }}
               />
 
               {/* BUTTON */}
