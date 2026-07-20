@@ -7,7 +7,6 @@ import { POWERUP_LOGO } from "@/lib/logoBase64";
 import { Gift, ArrowLeft, Loader2, CheckCircle, Clock, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { QRCodeSVG } from "qrcode.react";
-import domtoimage from "dom-to-image-more";
 import * as htmlToImage from "html-to-image";
 import Swal from "sweetalert2";
 
@@ -63,24 +62,38 @@ export default function MyVouchersPage() {
     fetchUserAndVouchers();
   }, [router]);
 
-  const handleDownloadVoucher = async () => {
-    console.log('---Downloading--')
+ const handleDownloadVoucher = async () => {
   if (!selectedVoucher) return;
 
   const card = document.getElementById("voucherCard");
   if (!card) return;
 
-  try {
-      const dataUrl = await domtoimage.toPng(card, {
-          quality: 1,
-          bgcolor: "#171717",
-          cacheBust: true,
-      });
-    console.log(dataUrl, 'Data url')
+  // Hide logo only while rendering
+  const logo = card.querySelector("img");
+  const originalDisplay = logo
+    ? (logo as HTMLElement).style.display
+    : "";
 
-    // Convert DataURL -> Blob
-    const response = await fetch(dataUrl);
-    const blob = await response.blob();
+  if (logo) {
+    (logo as HTMLElement).style.display = "none";
+  }
+
+  try {
+    const dataUrl = await htmlToImage.toPng(card, {
+      pixelRatio: 4,
+      cacheBust: true,
+      backgroundColor: "#171717",
+      skipFonts: true,
+      canvasWidth: card.offsetWidth * 4,
+      canvasHeight: card.offsetHeight * 4,
+    });
+
+    // Show logo again
+    if (logo) {
+      (logo as HTMLElement).style.display = originalDisplay;
+    }
+
+    const blob = await (await fetch(dataUrl)).blob();
 
     const file = new File(
       [blob],
@@ -90,7 +103,6 @@ export default function MyVouchersPage() {
       }
     );
 
-    // Mobile devices (Android/iPhone)
     if (
       navigator.canShare &&
       navigator.canShare({ files: [file] })
@@ -103,20 +115,20 @@ export default function MyVouchersPage() {
       return;
     }
 
-    // Desktop browsers
-    const blobUrl = URL.createObjectURL(blob);
+    const url = URL.createObjectURL(blob);
 
     const a = document.createElement("a");
-    a.href = blobUrl;
+    a.href = url;
     a.download = `PowerUp-Voucher-${selectedVoucher.code}.png`;
-
-    document.body.appendChild(a);
     a.click();
-    document.body.removeChild(a);
 
-    URL.revokeObjectURL(blobUrl);
+    URL.revokeObjectURL(url);
   } catch (err) {
-    console.error("Download failed:", err);
+    if (logo) {
+      (logo as HTMLElement).style.display = originalDisplay;
+    }
+
+    console.error(err);
 
     Swal.fire({
       icon: "error",
@@ -125,7 +137,7 @@ export default function MyVouchersPage() {
       confirmButtonColor: "#f97316",
     });
   }
-  };
+};
 
   return (
     <LayoutWithNav user={user}>
