@@ -226,7 +226,11 @@ export default function MyVouchersPage() {
                   alt="PowerUp Logo"
                   width={90}
                   height={90}
-                  className="drop-shadow-lg"
+                  style={{
+                    width: 90,
+                    height: 90,
+                    objectFit: "contain",
+                  }}
                   crossOrigin="anonymous"
                 />
               </div>
