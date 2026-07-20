@@ -411,14 +411,18 @@ export default function RewardsPage() {
 
               {/* Logo */}
               <div className="flex justify-center mb-4">
-                <Image
-                  src={newlogo}
-                  alt="PowerUp Logo"
-                  width={90}
-                  height={90}
-                  className="drop-shadow-lg"
-                />
-              </div>
+                  <img
+                      src={POWERUP_LOGO}
+                      alt="PowerUp Logo"
+                      width={90}
+                      height={90}
+                      style={{
+                          width: 90,
+                          height: 90,
+                          objectFit: "contain",
+                      }}
+                  />
+                </div>
 
               {/* QR */}
               <div
