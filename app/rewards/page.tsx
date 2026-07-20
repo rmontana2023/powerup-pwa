@@ -283,68 +283,78 @@ export default function RewardsPage() {
     }
   };
   const handleDownloadVoucher = async () => {
-    console.log('---Downloading--')
-  if (!selectedVoucher) return;
+  if (!voucher) return;
 
-  const card = document.getElementById("voucherCard");
+  const card = document.getElementById("downloadVoucher");
   if (!card) return;
 
   try {
-      const dataUrl = await domtoimage.toPng(card, {
-          quality: 1,
-          bgcolor: "#171717",
-          cacheBust: true,
-      });
-    console.log(dataUrl, 'Data url')
+    // Wait for all images to load
+    const images = Array.from(card.querySelectorAll("img"));
 
-    // Convert DataURL -> Blob
-    const response = await fetch(dataUrl);
-    const blob = await response.blob();
+    await Promise.all(
+      images.map((img) => {
+        if (img.complete) return Promise.resolve();
+
+        return new Promise<void>((resolve) => {
+          img.onload = () => resolve();
+          img.onerror = () => resolve();
+        });
+      })
+    );
+
+    const dataUrl = await htmlToImage.toPng(card, {
+      pixelRatio: 3,
+      cacheBust: true,
+      backgroundColor: "#ffffff",
+      skipFonts: true,
+    });
+
+    const blob = await (await fetch(dataUrl)).blob();
 
     const file = new File(
       [blob],
-      `PowerUp-Voucher-${selectedVoucher.code}.png`,
+      `PowerUp-Voucher-${voucher.code}.png`,
       {
         type: "image/png",
       }
     );
 
-    // Mobile devices (Android/iPhone)
+    // Mobile
     if (
       navigator.canShare &&
       navigator.canShare({ files: [file] })
     ) {
       await navigator.share({
-        title: "PowerUp E-Voucher",
-        text: `₱${selectedVoucher.amount} OFF Voucher`,
         files: [file],
+        title: "PowerUp Voucher",
       });
+
       return;
     }
 
-    // Desktop browsers
-    const blobUrl = URL.createObjectURL(blob);
+    // Desktop
+    const url = URL.createObjectURL(blob);
 
     const a = document.createElement("a");
-    a.href = blobUrl;
-    a.download = `PowerUp-Voucher-${selectedVoucher.code}.png`;
+    a.href = url;
+    a.download = `PowerUp-Voucher-${voucher.code}.png`;
 
     document.body.appendChild(a);
     a.click();
-    document.body.removeChild(a);
+    a.remove();
 
-    URL.revokeObjectURL(blobUrl);
+    URL.revokeObjectURL(url);
   } catch (err) {
-    console.error("Download failed:", err);
+    console.error(err);
 
     Swal.fire({
       icon: "error",
       title: "Download Failed",
-      text: "Unable to generate the voucher image.",
-      confirmButtonColor: "#f97316",
+      text: "Unable to generate voucher.",
     });
   }
-  };
+};
   return (
     <LayoutWithNav user={user} offlineMode={offlineMode} autoOpenQR={autoOpenQR}>
       <main className="min-h-screen bg-[var(--background)] text-[var(--foreground)] flex flex-col items-center px-4 py-6 pb-24">
@@ -462,7 +472,7 @@ export default function RewardsPage() {
             </div>
 
             {/* Foreground Card */}
-            <div ref={voucherRef} className="relative bg-neutral-900 text-white rounded-2xl p-6 shadow-2xl w-80 text-center border border-orange-500/30">
+            <div id="downloadVoucher" ref={voucherRef} className="relative bg-neutral-900 text-white rounded-2xl p-6 shadow-2xl w-80 text-center border border-orange-500/30">
               {/* Close */}
               <button
                 onClick={() => setVoucher(null)}
