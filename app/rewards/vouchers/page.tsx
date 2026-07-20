@@ -3,6 +3,7 @@ import React, { useEffect, useState } from "react";
 import Image from "next/image";
 import LayoutWithNav from "@/app/components/LayoutWithNav";
 import newlogo from "@/public/assets/logo/powerup-new-logo.png";
+import { POWERUP_LOGO } from "@/lib/logoBase64";
 import { Gift, ArrowLeft, Loader2, CheckCircle, Clock, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { QRCodeSVG } from "qrcode.react";
@@ -222,16 +223,15 @@ export default function MyVouchersPage() {
               {/* Logo */}
              <div className="flex justify-center mb-4">
                 <img
-                  src="/assets/logo/powerup-new-logo.png"
-                  alt="PowerUp Logo"
-                  width={90}
-                  height={90}
-                  style={{
-                    width: 90,
-                    height: 90,
-                    objectFit: "contain",
-                  }}
-                  crossOrigin="anonymous"
+                    src={POWERUP_LOGO}
+                    alt="PowerUp Logo"
+                    width={90}
+                    height={90}
+                    style={{
+                        width: 90,
+                        height: 90,
+                        objectFit: "contain",
+                    }}
                 />
               </div>
 
