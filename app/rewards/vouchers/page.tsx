@@ -204,17 +204,17 @@ export default function MyVouchersPage() {
                 bgColor="#000000"
               />
             </div>
-              <button
-                    onClick={() => setSelectedVoucher(null)}
-                    className="absolute -top-3 -right-3 z-20 bg-black rounded-full p-2"
-                >
-                    <X className="w-5 h-5 text-white"/>
-                </button>
             {/* Foreground Card */}
             <div
                 id="voucherCard"
                 className="relative bg-neutral-900 text-white rounded-2xl p-6 shadow-2xl w-80 text-center border border-orange-500/30"
               >
+                 <button
+                    onClick={() => setSelectedVoucher(null)}
+                    className="absolute -top-3 -right-3 z-20 bg-black rounded-full p-2"
+                >
+                    <X className="w-5 h-5 text-white"/>
+                </button>
              <div className="flex justify-center mb-4">
                 <img
                     src={POWERUP_LOGO}
