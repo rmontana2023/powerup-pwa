@@ -3,10 +3,13 @@ import React, { useEffect, useState } from "react";
 import Image from "next/image";
 import LayoutWithNav from "@/app/components/LayoutWithNav";
 import newlogo from "@/public/assets/logo/powerup-new-logo.png";
+import { POWERUP_LOGO } from "@/lib/logoBase64";
 import { Gift, ArrowLeft, Loader2, CheckCircle, Clock, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { QRCodeSVG } from "qrcode.react";
-import * as htmlToImage from "html-to-image";
+import domtoimage from "dom-to-image-more";
+import Swal from "sweetalert2";
+
 
 interface User {
   _id: string;
@@ -31,6 +34,7 @@ export default function MyVouchersPage() {
   const [loading, setLoading] = useState(true);
   const [selectedVoucher, setSelectedVoucher] = useState<Voucher | null>(null);
 
+ 
   useEffect(() => {
     async function fetchUserAndVouchers() {
       try {
@@ -57,6 +61,70 @@ export default function MyVouchersPage() {
 
     fetchUserAndVouchers();
   }, [router]);
+
+  const handleDownloadVoucher = async () => {
+    console.log('---Downloading--')
+  if (!selectedVoucher) return;
+
+  const card = document.getElementById("voucherCard");
+  if (!card) return;
+
+  try {
+      const dataUrl = await domtoimage.toPng(card, {
+          quality: 1,
+          bgcolor: "#171717",
+          cacheBust: true,
+      });
+    console.log(dataUrl, 'Data url')
+
+    // Convert DataURL -> Blob
+    const response = await fetch(dataUrl);
+    const blob = await response.blob();
+
+    const file = new File(
+      [blob],
+      `PowerUp-Voucher-${selectedVoucher.code}.png`,
+      {
+        type: "image/png",
+      }
+    );
+
+    // Mobile devices (Android/iPhone)
+    if (
+      navigator.canShare &&
+      navigator.canShare({ files: [file] })
+    ) {
+      await navigator.share({
+        title: "PowerUp E-Voucher",
+        text: `₱${selectedVoucher.amount} OFF Voucher`,
+        files: [file],
+      });
+      return;
+    }
+
+    // Desktop browsers
+    const blobUrl = URL.createObjectURL(blob);
+
+    const a = document.createElement("a");
+    a.href = blobUrl;
+    a.download = `PowerUp-Voucher-${selectedVoucher.code}.png`;
+
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+
+    URL.revokeObjectURL(blobUrl);
+  } catch (err) {
+    console.error("Download failed:", err);
+
+    Swal.fire({
+      icon: "error",
+      title: "Download Failed",
+      text: "Unable to generate the voucher image.",
+      confirmButtonColor: "#f97316",
+    });
+  }
+};
 
   return (
     <LayoutWithNav user={user}>
@@ -135,25 +203,37 @@ export default function MyVouchersPage() {
                 bgColor="#000000"
               />
             </div>
-
-            {/* Foreground Card */}
-            <div className="relative bg-neutral-900 text-white rounded-2xl p-6 shadow-2xl w-80 text-center border border-orange-500/30">
-              {/* Close */}
               <button
+                    onClick={() => setSelectedVoucher(null)}
+                    className="absolute -top-3 -right-3 z-20 bg-black rounded-full p-2"
+                >
+                    <X className="w-5 h-5 text-white"/>
+                </button>
+            {/* Foreground Card */}
+            <div
+                id="voucherCard"
+                className="relative bg-neutral-900 text-white rounded-2xl p-6 shadow-2xl w-80 text-center border border-orange-500/30"
+              >
+              {/* Close */}
+              {/* <button
                 onClick={() => setSelectedVoucher(null)}
                 className="absolute top-3 right-3 text-gray-400 hover:text-white z-10"
               >
                 <X className="w-5 h-5" />
-              </button>
+              </button> */}
 
               {/* Logo */}
-              <div className="flex justify-center mb-4">
-                <Image
-                  src={newlogo}
-                  alt="PowerUp Logo"
-                  width={90}
-                  height={90}
-                  className="drop-shadow-lg"
+             <div className="flex justify-center mb-4">
+                <img
+                    src={POWERUP_LOGO}
+                    alt="PowerUp Logo"
+                    width={90}
+                    height={90}
+                    style={{
+                        width: 90,
+                        height: 90,
+                        objectFit: "contain",
+                    }}
                 />
               </div>
 
@@ -207,26 +287,13 @@ export default function MyVouchersPage() {
               {/* Buttons */}
               <div className="flex justify-center gap-3 mt-5 z-10">
                 <button
-                  onClick={async () => {
-                    const qrElement = document.getElementById("voucherQRContainer");
-                    if (!qrElement) return;
-
-                    try {
-                      const dataUrl = await htmlToImage.toPng(qrElement);
-                      const link = document.createElement("a");
-                      link.download = `${selectedVoucher.code}.png`;
-                      link.href = dataUrl;
-                      link.click();
-                    } catch (error) {
-                      console.error("Error downloading QR:", error);
-                    }
-                  }}
+                  onClick={handleDownloadVoucher}
                   className="bg-orange-500 hover:bg-orange-600 text-white text-sm px-4 py-2 rounded-lg shadow transition"
                 >
-                  Download
+                  Download Voucher
                 </button>
 
-                <button
+                {/* <button
                   onClick={async () => {
                     try {
                       const shareData = {
@@ -246,7 +313,7 @@ export default function MyVouchersPage() {
                   className="bg-gray-700 hover:bg-gray-600 text-white text-sm px-4 py-2 rounded-lg shadow transition"
                 >
                   Share
-                </button>
+                </button> */}
               </div>
             </div>
           </div>
