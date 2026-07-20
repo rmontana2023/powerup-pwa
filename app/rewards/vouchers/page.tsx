@@ -220,13 +220,14 @@ export default function MyVouchersPage() {
               </button> */}
 
               {/* Logo */}
-              <div className="flex justify-center mb-4">
-                <Image
-                  src={newlogo}
+             <div className="flex justify-center mb-4">
+                <img
+                  src="/assets/logo/powerup-new-logo.png"
                   alt="PowerUp Logo"
                   width={90}
                   height={90}
                   className="drop-shadow-lg"
+                  crossOrigin="anonymous"
                 />
               </div>
 
