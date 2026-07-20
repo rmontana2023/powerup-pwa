@@ -7,7 +7,7 @@ import { POWERUP_LOGO } from "@/lib/logoBase64";
 import { Gift, ArrowLeft, Loader2, CheckCircle, Clock, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { QRCodeSVG } from "qrcode.react";
-import * as htmlToImage from "html-to-image";
+import domtoimage from "dom-to-image-more";
 import Swal from "sweetalert2";
 
 
@@ -34,6 +34,7 @@ export default function MyVouchersPage() {
   const [loading, setLoading] = useState(true);
   const [selectedVoucher, setSelectedVoucher] = useState<Voucher | null>(null);
 
+ 
   useEffect(() => {
     async function fetchUserAndVouchers() {
       try {
@@ -69,11 +70,12 @@ export default function MyVouchersPage() {
   if (!card) return;
 
   try {
-    const dataUrl = await htmlToImage.toPng(card, {
-      pixelRatio: 3,
-      cacheBust: true,
-      backgroundColor: "#171717",
-    });
+      const dataUrl = await domtoimage.toPng(card, {
+          quality: 1,
+          bgcolor: "#171717",
+          cacheBust: true,
+      });
+    console.log(dataUrl, 'Data url')
 
     // Convert DataURL -> Blob
     const response = await fetch(dataUrl);
