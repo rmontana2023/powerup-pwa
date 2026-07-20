@@ -135,16 +135,24 @@ export default function MyVouchersPage() {
                 bgColor="#000000"
               />
             </div>
-
-            {/* Foreground Card */}
-            <div className="relative bg-neutral-900 text-white rounded-2xl p-6 shadow-2xl w-80 text-center border border-orange-500/30">
-              {/* Close */}
               <button
+                    onClick={() => setSelectedVoucher(null)}
+                    className="absolute -top-3 -right-3 z-20 bg-black rounded-full p-2"
+                >
+                    <X className="w-5 h-5 text-white"/>
+                </button>
+            {/* Foreground Card */}
+            <div
+                id="voucherCard"
+                className="relative bg-neutral-900 text-white rounded-2xl p-6 shadow-2xl w-80 text-center border border-orange-500/30"
+              >
+              {/* Close */}
+              {/* <button
                 onClick={() => setSelectedVoucher(null)}
                 className="absolute top-3 right-3 text-gray-400 hover:text-white z-10"
               >
                 <X className="w-5 h-5" />
-              </button>
+              </button> */}
 
               {/* Logo */}
               <div className="flex justify-center mb-4">
@@ -208,17 +216,22 @@ export default function MyVouchersPage() {
               <div className="flex justify-center gap-3 mt-5 z-10">
                 <button
                   onClick={async () => {
-                    const qrElement = document.getElementById("voucherQRContainer");
-                    if (!qrElement) return;
+                    const card = document.getElementById("voucherCard");
+                    if (!card) return;
 
                     try {
-                      const dataUrl = await htmlToImage.toPng(qrElement);
+                      const dataUrl = await htmlToImage.toPng(card, {
+                        pixelRatio: 3, // much sharper image
+                        cacheBust: true,
+                        backgroundColor: "#171717", // preserve dark background
+                      });
+
                       const link = document.createElement("a");
-                      link.download = `${selectedVoucher.code}.png`;
+                      link.download = `PowerUp-Voucher-${selectedVoucher.code}.png`;
                       link.href = dataUrl;
                       link.click();
-                    } catch (error) {
-                      console.error("Error downloading QR:", error);
+                    } catch (err) {
+                      console.error("Download failed:", err);
                     }
                   }}
                   className="bg-orange-500 hover:bg-orange-600 text-white text-sm px-4 py-2 rounded-lg shadow transition"
