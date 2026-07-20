@@ -125,7 +125,7 @@ export default function MyVouchersPage() {
       confirmButtonColor: "#f97316",
     });
   }
-};
+  };
 
   return (
     <LayoutWithNav user={user}>
@@ -279,23 +279,10 @@ export default function MyVouchersPage() {
               {/* Buttons */}
               <div className="flex justify-center gap-3 mt-5 z-10">
                 <button
-                  onClick={async () => {
-                    const qrElement = document.getElementById("voucherQRContainer");
-                    if (!qrElement) return;
-
-                    try {
-                      const dataUrl = await htmlToImage.toPng(qrElement);
-                      const link = document.createElement("a");
-                      link.download = `${selectedVoucher.code}.png`;
-                      link.href = dataUrl;
-                      link.click();
-                    } catch (error) {
-                      console.error("Error downloading QR:", error);
-                    }
-                  }}
+                  onClick={handleDownloadVoucher}
                   className="bg-orange-500 hover:bg-orange-600 text-white text-sm px-4 py-2 rounded-lg shadow transition"
                 >
-                  Download
+                  Download Voucher
                 </button>
 
                 {/* <button
