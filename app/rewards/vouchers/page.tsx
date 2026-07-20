@@ -8,6 +8,7 @@ import { Gift, ArrowLeft, Loader2, CheckCircle, Clock, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { QRCodeSVG } from "qrcode.react";
 import domtoimage from "dom-to-image-more";
+import * as htmlToImage from "html-to-image";
 import Swal from "sweetalert2";
 
 
@@ -278,10 +279,23 @@ export default function MyVouchersPage() {
               {/* Buttons */}
               <div className="flex justify-center gap-3 mt-5 z-10">
                 <button
-                  onClick={handleDownloadVoucher}
+                  onClick={async () => {
+                    const qrElement = document.getElementById("voucherQRContainer");
+                    if (!qrElement) return;
+
+                    try {
+                      const dataUrl = await htmlToImage.toPng(qrElement);
+                      const link = document.createElement("a");
+                      link.download = `${selectedVoucher.code}.png`;
+                      link.href = dataUrl;
+                      link.click();
+                    } catch (error) {
+                      console.error("Error downloading QR:", error);
+                    }
+                  }}
                   className="bg-orange-500 hover:bg-orange-600 text-white text-sm px-4 py-2 rounded-lg shadow transition"
                 >
-                  Download Voucher
+                  Download
                 </button>
 
                 {/* <button

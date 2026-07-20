@@ -282,69 +282,7 @@ export default function RewardsPage() {
       setLoadingVoucher(false);
     }
   };
-const handleDownloadVoucher = async () => {
-    console.log('---Downloading--')
-  if (!selectedVoucher) return;
 
-  const card = document.getElementById("voucherCard");
-  if (!card) return;
-
-  try {
-      const dataUrl = await domtoimage.toPng(card, {
-          quality: 1,
-          bgcolor: "#171717",
-          cacheBust: true,
-      });
-    console.log(dataUrl, 'Data url')
-
-    // Convert DataURL -> Blob
-    const response = await fetch(dataUrl);
-    const blob = await response.blob();
-
-    const file = new File(
-      [blob],
-      `PowerUp-Voucher-${selectedVoucher.code}.png`,
-      {
-        type: "image/png",
-      }
-    );
-
-    // Mobile devices (Android/iPhone)
-    if (
-      navigator.canShare &&
-      navigator.canShare({ files: [file] })
-    ) {
-      await navigator.share({
-        title: "PowerUp E-Voucher",
-        text: `₱${selectedVoucher.amount} OFF Voucher`,
-        files: [file],
-      });
-      return;
-    }
-
-    // Desktop browsers
-    const blobUrl = URL.createObjectURL(blob);
-
-    const a = document.createElement("a");
-    a.href = blobUrl;
-    a.download = `PowerUp-Voucher-${selectedVoucher.code}.png`;
-
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-
-    URL.revokeObjectURL(blobUrl);
-  } catch (err) {
-    console.error("Download failed:", err);
-
-    Swal.fire({
-      icon: "error",
-      title: "Download Failed",
-      text: "Unable to generate the voucher image.",
-      confirmButtonColor: "#f97316",
-    });
-  }
-};
   return (
     <LayoutWithNav user={user} offlineMode={offlineMode} autoOpenQR={autoOpenQR}>
       <main className="min-h-screen bg-[var(--background)] text-[var(--foreground)] flex flex-col items-center px-4 py-6 pb-24">
@@ -539,9 +477,47 @@ const handleDownloadVoucher = async () => {
 
               {/* Buttons */}
               <div className="flex justify-center mt-6 z-10">
-                  <button
-                  onClick={handleDownloadVoucher}
-                  className="bg-orange-500 hover:bg-orange-600 text-white text-sm px-4 py-2 rounded-lg shadow transition"
+                <button
+                  onClick={async () => {
+                    if (!voucherRef.current) return;
+
+                    try {
+                      const dataUrl = await htmlToImage.toPng(voucherRef.current, {
+                        cacheBust: true,
+                        pixelRatio: 4,
+                        backgroundColor: "#ffffff",
+                      });
+
+                      const response = await fetch(dataUrl);
+                      const blob = await response.blob();
+
+                      const file = new File(
+                        [blob],
+                        `PowerUp-Voucher-${voucher.code}.png`,
+                        {
+                          type: "image/png",
+                        }
+                      );
+
+                      if (
+                        navigator.canShare &&
+                        navigator.canShare({ files: [file] })
+                      ) {
+                        await navigator.share({
+                          files: [file],
+                          title: "PowerUp E-Voucher",
+                        });
+                      } else {
+                        const link = document.createElement("a");
+                        link.href = dataUrl;
+                        link.download = `PowerUp-Voucher-${voucher.code}.png`;
+                        link.click();
+                      }
+                    } catch (err) {
+                      console.error(err);
+                    }
+                  }}
+                  className="w-full max-w-[200px] bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium px-5 py-2.5 rounded-xl shadow-md transition-all active:scale-[0.97]"
                 >
                   Download Voucher
                 </button>
