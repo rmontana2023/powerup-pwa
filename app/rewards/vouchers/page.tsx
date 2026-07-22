@@ -10,7 +10,6 @@ import { QRCodeSVG } from "qrcode.react";
 import * as htmlToImage from "html-to-image";
 import Swal from "sweetalert2";
 
-
 interface User {
   _id: string;
   name: string;
@@ -34,7 +33,6 @@ export default function MyVouchersPage() {
   const [loading, setLoading] = useState(true);
   const [selectedVoucher, setSelectedVoucher] = useState<Voucher | null>(null);
 
- 
   useEffect(() => {
     async function fetchUserAndVouchers() {
       try {
@@ -62,82 +60,68 @@ export default function MyVouchersPage() {
     fetchUserAndVouchers();
   }, [router]);
 
- const handleDownloadVoucher = async () => {
-  if (!selectedVoucher) return;
+  const handleDownloadVoucher = async () => {
+    if (!selectedVoucher) return;
 
-  const card = document.getElementById("voucherCard");
-  if (!card) return;
+    const card = document.getElementById("voucherCard");
+    if (!card) return;
 
-  // Hide logo only while rendering
-  const logo = card.querySelector("img");
-  const originalDisplay = logo
-    ? (logo as HTMLElement).style.display
-    : "";
+    try {
+      const images = Array.from(card.querySelectorAll("img"));
 
-  if (logo) {
-    (logo as HTMLElement).style.display = "none";
-  }
+      await Promise.all(
+        images.map((img) => {
+          if (img.complete) return Promise.resolve();
+          return new Promise<void>((resolve) => {
+            img.onload = () => resolve();
+            img.onerror = () => resolve();
+          });
+        }),
+      );
 
-  try {
-    const dataUrl = await htmlToImage.toPng(card, {
-      pixelRatio: 4,
-      cacheBust: true,
-      backgroundColor: "#171717",
-      skipFonts: true,
-      canvasWidth: card.offsetWidth * 4,
-      canvasHeight: card.offsetHeight * 4,
-    });
-
-    // Show logo again
-    if (logo) {
-      (logo as HTMLElement).style.display = originalDisplay;
-    }
-
-    const blob = await (await fetch(dataUrl)).blob();
-
-    const file = new File(
-      [blob],
-      `PowerUp-Voucher-${selectedVoucher.code}.png`,
-      {
-        type: "image/png",
-      }
-    );
-
-    if (
-      navigator.canShare &&
-      navigator.canShare({ files: [file] })
-    ) {
-      await navigator.share({
-        title: "PowerUp E-Voucher",
-        text: `₱${selectedVoucher.amount} OFF Voucher`,
-        files: [file],
+      const dataUrl = await htmlToImage.toPng(card, {
+        pixelRatio: 4,
+        cacheBust: true,
+        backgroundColor: "#171717",
+        skipFonts: true,
       });
-      return;
+
+      const blob = await (await fetch(dataUrl)).blob();
+
+      const file = new File([blob], `PowerUp-Voucher-${selectedVoucher.code}.png`, {
+        type: "image/png",
+      });
+
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({
+          title: "PowerUp E-Voucher",
+          text: `₱${selectedVoucher.amount} OFF Voucher`,
+          files: [file],
+        });
+        return;
+      }
+
+      const url = URL.createObjectURL(blob);
+
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `PowerUp-Voucher-${selectedVoucher.code}.png`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error(err);
+
+      Swal.fire({
+        icon: "error",
+        title: "Download Failed",
+        text: "Unable to generate the voucher image.",
+        confirmButtonColor: "#f97316",
+      });
     }
-
-    const url = URL.createObjectURL(blob);
-
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `PowerUp-Voucher-${selectedVoucher.code}.png`;
-    a.click();
-
-    URL.revokeObjectURL(url);
-  } catch (err) {
-    if (logo) {
-      (logo as HTMLElement).style.display = originalDisplay;
-    }
-
-    console.error(err);
-
-    Swal.fire({
-      icon: "error",
-      title: "Download Failed",
-      text: "Unable to generate the voucher image.",
-      confirmButtonColor: "#f97316",
-    });
-  }
-};
+  };
 
   return (
     <LayoutWithNav user={user}>
@@ -218,26 +202,26 @@ export default function MyVouchersPage() {
             </div>
             {/* Foreground Card */}
             <div
-                id="voucherCard"
-                className="relative bg-neutral-900 text-white rounded-2xl p-6 shadow-2xl w-80 text-center border border-orange-500/30"
+              id="voucherCard"
+              className="relative bg-neutral-900 text-white rounded-2xl p-6 shadow-2xl w-80 text-center border border-orange-500/30"
+            >
+              <button
+                onClick={() => setSelectedVoucher(null)}
+                className="absolute -top-3 -right-3 z-20 bg-black rounded-full p-2"
               >
-                 <button
-                    onClick={() => setSelectedVoucher(null)}
-                    className="absolute -top-3 -right-3 z-20 bg-black rounded-full p-2"
-                >
-                    <X className="w-5 h-5 text-white"/>
-                </button>
-             <div className="flex justify-center mb-4">
+                <X className="w-5 h-5 text-white" />
+              </button>
+              <div className="flex justify-center mb-4">
                 <img
-                    src={POWERUP_LOGO}
-                    alt="PowerUp Logo"
-                    width={90}
-                    height={90}
-                    style={{
-                        width: 90,
-                        height: 90,
-                        objectFit: "contain",
-                    }}
+                  src={POWERUP_LOGO}
+                  alt="PowerUp Logo"
+                  width={90}
+                  height={90}
+                  style={{
+                    width: 90,
+                    height: 90,
+                    objectFit: "contain",
+                  }}
                 />
               </div>
 
