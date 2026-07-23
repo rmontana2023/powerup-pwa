@@ -84,7 +84,7 @@ export default function MyVouchersPage() {
     ctx.strokeRect(10, 10, canvas.width - 20, canvas.height - 20);
 
     // ---------- Logo ----------
-    const logo = new Image();
+    const logo = new window.Image();
 
     logo.src = POWERUP_LOGO;
 
@@ -107,7 +107,7 @@ export default function MyVouchersPage() {
       margin: 1,
     });
 
-    const qr = new Image();
+  const qr = new window.Image();
 
     qr.src = qrData;
 
