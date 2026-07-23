@@ -7,7 +7,6 @@ import { POWERUP_LOGO } from "@/lib/logoBase64";
 import { Gift, ArrowLeft, Loader2, CheckCircle, Clock, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { QRCodeSVG } from "qrcode.react";
-import { QRCodeCanvas } from "qrcode.react";
 import QRCode from "qrcode"
 import Swal from "sweetalert2";
 
@@ -169,11 +168,11 @@ export default function MyVouchersPage() {
     ctx.fillStyle = "#ffffff";
     ctx.font = "bold 36px Arial";
 
-    ctx.fillText(
-      user.name,
-      canvas.width / 2,
-      1370
-    );
+    // ctx.fillText(
+    //   user.name,
+    //   canvas.width / 2,
+    //   1370
+    // );
 
     // Warning
     ctx.fillStyle = "#ff4444";

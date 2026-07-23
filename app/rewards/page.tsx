@@ -8,7 +8,7 @@ import VoucherList from "../components/VoucherList";
 import { POWERUP_LOGO } from "@/lib/logoBase64";
 import { QRCodeSVG } from "qrcode.react";
 import { Search, History, HelpCircle, Gift } from "lucide-react";
-import * as htmlToImage from "html-to-image";
+import QRCode from "qrcode"
 import { X, User } from "lucide-react";
 import Swal from "sweetalert2";
 
@@ -283,70 +283,177 @@ export default function RewardsPage() {
     }
   };
   const handleDownloadVoucher = async () => {
-  if (!voucher) return;
-
-  const card = document.getElementById("downloadVoucher");
-  if (!card) return;
+  if (!voucher || !user) return;
 
   try {
-    // Wait for all images to load
-    const images = Array.from(card.querySelectorAll("img"));
+    const canvas = document.createElement("canvas");
 
-    await Promise.all(
-      images.map((img) => {
-        if (img.complete) return Promise.resolve();
+    canvas.width = 1200;
+    canvas.height = 1800;
 
-        return new Promise<void>((resolve) => {
-          img.onload = () => resolve();
-          img.onerror = () => resolve();
-        });
-      })
-    );
+    const ctx = canvas.getContext("2d");
 
-    const dataUrl = await htmlToImage.toPng(card, {
-      pixelRatio: 3,
-      cacheBust: true,
-      backgroundColor: "#ffffff",
-      skipFonts: true,
+    if (!ctx) return;
+
+    // Background
+    ctx.fillStyle = "#171717";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Orange Border
+    ctx.strokeStyle = "#f97316";
+    ctx.lineWidth = 10;
+    ctx.strokeRect(10, 10, canvas.width - 20, canvas.height - 20);
+
+    // ----------------------------
+    // Logo
+    // ----------------------------
+
+    const logo = new window.Image();
+    logo.src = newlogo.src;;
+    await new Promise<void>((resolve, reject) => {
+      logo.onload = () => resolve();
+      logo.onerror = reject;
     });
 
-    const blob = await (await fetch(dataUrl)).blob();
-
-    const file = new File(
-      [blob],
-      `PowerUp-Voucher-${voucher.code}.png`,
-      {
-        type: "image/png",
-      }
+    ctx.drawImage(
+      logo,
+      canvas.width / 2 - 120,
+      70,
+      240,
+      240
     );
 
-    // Mobile
-    if (
-      navigator.canShare &&
-      navigator.canShare({ files: [file] })
-    ) {
-      await navigator.share({
-        files: [file],
-        title: "PowerUp Voucher",
-      });
+    // ----------------------------
+    // QR
+    // ----------------------------
 
-      return;
-    }
+    const qrData = await QRCode.toDataURL(voucher.code, {
+      width: 500,
+      margin: 1,
+    });
 
-    // Desktop
-    const url = URL.createObjectURL(blob);
+    const qr = new window.Image();
+    qr.src = qrData;
 
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `PowerUp-Voucher-${voucher.code}.png`;
+    await new Promise<void>((resolve, reject) => {
+      qr.onload = () => resolve();
+      qr.onerror = reject;
+    });
 
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(350, 350, 500, 500);
 
-    URL.revokeObjectURL(url);
+    ctx.drawImage(qr, 350, 350, 500, 500);
+
+    // ----------------------------
+    // Voucher Details
+    // ----------------------------
+
+    ctx.textAlign = "center";
+
+    ctx.fillStyle = "#f97316";
+    ctx.font = "bold 88px Arial";
+
+    ctx.fillText(
+      `₱${voucher.amount} OFF`,
+      canvas.width / 2,
+      980
+    );
+
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "bold 54px Arial";
+
+    ctx.fillText(
+      "E-VOUCHER",
+      canvas.width / 2,
+      1060
+    );
+
+    ctx.fillStyle = "#f97316";
+    ctx.font = "bold 44px Arial";
+
+    ctx.fillText(
+      voucher.code,
+      canvas.width / 2,
+      1140
+    );
+
+    ctx.fillStyle = "#cccccc";
+    ctx.font = "32px Arial";
+
+    ctx.fillText(
+      `Created: ${new Date(voucher.createdAt).toLocaleDateString()}`,
+      canvas.width / 2,
+      1230
+    );
+
+    ctx.fillText(
+      `Valid Until: ${new Date(voucher.expiresAt).toLocaleDateString()}`,
+      canvas.width / 2,
+      1285
+    );
+
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "bold 36px Arial";
+
+    // ctx.fillText(
+    //   user.name,
+    //   canvas.width / 2,
+    //   1370
+    // );
+
+    // ----------------------------
+    // Warning
+    // ----------------------------
+
+    ctx.fillStyle = "#ff4444";
+    ctx.font = "bold 28px Arial";
+
+    ctx.fillText(
+      "Screenshots will not be entertained",
+      canvas.width / 2,
+      1550
+    );
+
+    // ----------------------------
+    // Download / Share
+    // ----------------------------
+
+    canvas.toBlob(async (blob) => {
+      if (!blob) return;
+
+      const file = new File(
+        [blob],
+        `PowerUp-Voucher-${voucher.code}.png`,
+        {
+          type: "image/png",
+        }
+      );
+
+      if (
+        navigator.canShare &&
+        navigator.canShare({ files: [file] })
+      ) {
+        await navigator.share({
+          title: "PowerUp Voucher",
+          files: [file],
+        });
+
+        return;
+      }
+
+      const url = URL.createObjectURL(blob);
+
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = file.name;
+      a.click();
+
+      URL.revokeObjectURL(url);
+    });
+
   } catch (err) {
-    console.error(err);
+      console.error("DOWNLOAD ERROR:", err);
 
     Swal.fire({
       icon: "error",
