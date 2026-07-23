@@ -42,7 +42,7 @@ const InstallPWAButton: React.FC = () => {
   };
 
   if (isInStandalone) return null; // Already installed
-  if (!showButton && !isIOS) return null; // Only show on eligible browsers
+  if (!showButton) return null; // Only show on eligible browsers
 
   return (
     <button
