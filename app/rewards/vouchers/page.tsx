@@ -7,7 +7,8 @@ import { POWERUP_LOGO } from "@/lib/logoBase64";
 import { Gift, ArrowLeft, Loader2, CheckCircle, Clock, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { QRCodeSVG } from "qrcode.react";
-import * as htmlToImage from "html-to-image";
+import { QRCodeCanvas } from "qrcode.react";
+import QRCode from "qrcode"
 import Swal from "sweetalert2";
 
 interface User {
@@ -61,67 +62,174 @@ export default function MyVouchersPage() {
   }, [router]);
 
   const handleDownloadVoucher = async () => {
-    if (!selectedVoucher) return;
+  if (!selectedVoucher || !user) return;
 
-    const card = document.getElementById("voucherCard");
-    if (!card) return;
+  try {
+    const canvas = document.createElement("canvas");
 
-    try {
-      const images = Array.from(card.querySelectorAll("img"));
+    canvas.width = 1200;
+    canvas.height = 1800;
 
-      await Promise.all(
-        images.map((img) => {
-          if (img.complete) return Promise.resolve();
-          return new Promise<void>((resolve) => {
-            img.onload = () => resolve();
-            img.onerror = () => resolve();
-          });
-        }),
+    const ctx = canvas.getContext("2d");
+
+    if (!ctx) return;
+
+    // Background
+    ctx.fillStyle = "#171717";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Orange border
+    ctx.strokeStyle = "#f97316";
+    ctx.lineWidth = 10;
+    ctx.strokeRect(10, 10, canvas.width - 20, canvas.height - 20);
+
+    // ---------- Logo ----------
+    const logo = new Image();
+
+    logo.src = POWERUP_LOGO;
+
+    await new Promise<void>((resolve, reject) => {
+      logo.onload = () => resolve();
+      logo.onerror = reject;
+    });
+
+    ctx.drawImage(
+      logo,
+      canvas.width / 2 - 120,
+      70,
+      240,
+      240
+    );
+
+    // ---------- QR ----------
+    const qrData = await QRCode.toDataURL(selectedVoucher.code, {
+      width: 500,
+      margin: 1,
+    });
+
+    const qr = new Image();
+
+    qr.src = qrData;
+
+    await new Promise<void>((resolve, reject) => {
+      qr.onload = () => resolve();
+      qr.onerror = reject;
+    });
+
+    ctx.fillStyle = "#fff";
+    ctx.fillRect(350, 350, 500, 500);
+
+    ctx.drawImage(qr, 350, 350, 500, 500);
+
+    // ---------- Text ----------
+    ctx.textAlign = "center";
+
+    ctx.fillStyle = "#f97316";
+    ctx.font = "bold 88px Arial";
+
+    ctx.fillText(
+      `₱${selectedVoucher.amount} OFF`,
+      canvas.width / 2,
+      980
+    );
+
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "bold 54px Arial";
+
+    ctx.fillText(
+      "E-VOUCHER",
+      canvas.width / 2,
+      1060
+    );
+
+    ctx.fillStyle = "#f97316";
+    ctx.font = "bold 44px Arial";
+
+    ctx.fillText(
+      selectedVoucher.code,
+      canvas.width / 2,
+      1140
+    );
+
+    ctx.fillStyle = "#cccccc";
+    ctx.font = "32px Arial";
+
+    ctx.fillText(
+      `Created: ${new Date(selectedVoucher.createdAt).toLocaleDateString()}`,
+      canvas.width / 2,
+      1230
+    );
+
+    ctx.fillText(
+      `Valid Until: ${new Date(selectedVoucher.expiresAt).toLocaleDateString()}`,
+      canvas.width / 2,
+      1285
+    );
+
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "bold 36px Arial";
+
+    ctx.fillText(
+      user.name,
+      canvas.width / 2,
+      1370
+    );
+
+    // Warning
+    ctx.fillStyle = "#ff4444";
+    ctx.font = "bold 28px Arial";
+
+    ctx.fillText(
+      "Screenshots will not be entertained",
+      canvas.width / 2,
+      1550
+    );
+
+    canvas.toBlob(async (blob) => {
+      if (!blob) return;
+
+      const file = new File(
+        [blob],
+        `PowerUp-Voucher-${selectedVoucher.code}.png`,
+        {
+          type: "image/png",
+        }
       );
 
-      const dataUrl = await htmlToImage.toPng(card, {
-        pixelRatio: 4,
-        cacheBust: true,
-        backgroundColor: "#171717",
-        skipFonts: true,
-      });
-
-      const blob = await (await fetch(dataUrl)).blob();
-
-      const file = new File([blob], `PowerUp-Voucher-${selectedVoucher.code}.png`, {
-        type: "image/png",
-      });
-
-      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      if (
+        navigator.canShare &&
+        navigator.canShare({ files: [file] })
+      ) {
         await navigator.share({
-          title: "PowerUp E-Voucher",
-          text: `₱${selectedVoucher.amount} OFF Voucher`,
+          title: "PowerUp Voucher",
           files: [file],
         });
+
         return;
       }
 
       const url = URL.createObjectURL(blob);
 
       const a = document.createElement("a");
+
       a.href = url;
-      a.download = `PowerUp-Voucher-${selectedVoucher.code}.png`;
-      document.body.appendChild(a);
+      a.download = file.name;
+
       a.click();
-      a.remove();
 
       URL.revokeObjectURL(url);
-    } catch (err) {
-      console.error(err);
+    });
 
-      Swal.fire({
-        icon: "error",
-        title: "Download Failed",
-        text: "Unable to generate the voucher image.",
-        confirmButtonColor: "#f97316",
-      });
-    }
-  };
+  } catch (err) {
+    console.error(err);
+
+    Swal.fire({
+      icon: "error",
+      title: "Download Failed",
+      text: "Unable to generate voucher.",
+    });
+  }
+};
 
   return (
     <LayoutWithNav user={user}>
