@@ -412,11 +412,11 @@ export default function RewardsPage() {
     ctx.fillStyle = "#ff4444";
     ctx.font = "bold 28px Arial";
 
-    ctx.fillText(
-      "Screenshots will not be entertained",
-      canvas.width / 2,
-      1550
-    );
+    // ctx.fillText(
+    //   "Screenshots will not be entertained",
+    //   canvas.width / 2,
+    //   1550
+    // );
 
     // ----------------------------
     // Download / Share
@@ -657,9 +657,9 @@ export default function RewardsPage() {
               <div className="border-t border-white/20 my-4" />
 
               {/* Warning */}
-              <p className="text-xs text-red-400 font-semibold px-2">
+              {/* <p className="text-xs text-red-400 font-semibold px-2">
                 ⚠️ Screenshots will not be entertained by the cashier.
-              </p>
+              </p> */}
 
               {/* Buttons */}
               <div className="flex justify-center mt-6 z-10">

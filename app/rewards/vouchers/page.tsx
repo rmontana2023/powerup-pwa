@@ -181,11 +181,11 @@ export default function MyVouchersPage() {
     ctx.fillStyle = "#ff4444";
     ctx.font = "bold 28px Arial";
 
-    ctx.fillText(
-      "Screenshots will not be entertained",
-      canvas.width / 2,
-      1550
-    );
+    // ctx.fillText(
+    //   "Screenshots will not be entertained",
+    //   canvas.width / 2,
+    //   1550
+    // );
 
     canvas.toBlob(async (blob) => {
       if (!blob) return;
@@ -378,9 +378,9 @@ export default function MyVouchersPage() {
               <div className="border-t border-white/20 my-4" />
 
               {/* Warning */}
-              <p className="text-xs text-red-400 font-semibold px-2">
+              {/* <p className="text-xs text-red-400 font-semibold px-2">
                 ⚠️ Screenshots will not be entertained by the cashier.
-              </p>
+              </p> */}
 
               {/* Buttons */}
               <div className="flex justify-center gap-3 mt-5 z-10">
