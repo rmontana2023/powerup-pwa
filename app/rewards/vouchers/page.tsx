@@ -13,6 +13,8 @@ import Swal from "sweetalert2";
 interface User {
   _id: string;
   name: string;
+  firstName: string,
+  lastName: string,
   email: string;
 }
 
@@ -62,6 +64,7 @@ export default function MyVouchersPage() {
 
   const handleDownloadVoucher = async () => {
   if (!selectedVoucher || !user) return;
+  console.log(user, 'useeeeeeer')
 
   try {
     const canvas = document.createElement("canvas");
@@ -168,11 +171,11 @@ export default function MyVouchersPage() {
     ctx.fillStyle = "#ffffff";
     ctx.font = "bold 36px Arial";
 
-    // ctx.fillText(
-    //   user.name,
-    //   canvas.width / 2,
-    //   1370
-    // );
+    ctx.fillText(
+      user.firstName + ' ' + user.lastName,
+      canvas.width / 2,
+      1370
+    );
 
     // Warning
     ctx.fillStyle = "#ff4444";

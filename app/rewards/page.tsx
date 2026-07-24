@@ -15,6 +15,8 @@ import Swal from "sweetalert2";
 interface User {
   _id: string;
   name: string;
+  firstName: string,
+  lastName: string,
   email: string;
   accountType: "ordinary" | "fleet";
 }
@@ -284,6 +286,7 @@ export default function RewardsPage() {
   };
   const handleDownloadVoucher = async () => {
   if (!voucher || !user) return;
+  console.log(user, "useeeeeer")
 
   try {
     const canvas = document.createElement("canvas");
@@ -396,11 +399,11 @@ export default function RewardsPage() {
     ctx.fillStyle = "#ffffff";
     ctx.font = "bold 36px Arial";
 
-    // ctx.fillText(
-    //   user.name,
-    //   canvas.width / 2,
-    //   1370
-    // );
+    ctx.fillText(
+      user.firstName + ' ' + user.lastName,
+      canvas.width / 2,
+      1370
+    );
 
     // ----------------------------
     // Warning
