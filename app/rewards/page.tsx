@@ -648,7 +648,7 @@ export default function RewardsPage() {
               </p>
 
               {/* Customer Name */}
-              <p className="text-sm font-medium text-white">{user?.name}</p>
+              <p className="text-sm font-medium text-white">{user?.firstName + ' ' + user?.lastName}</p>
 
               {/* Timer */}
               {/* <p className="text-sm font-semibold text-orange-400">Expires in: {redeemTimer}s</p> */}
