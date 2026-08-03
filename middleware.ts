@@ -2,12 +2,20 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { jwtVerify } from "jose";
 
-const publicPaths = ["/login", "/register", "/reset-password", "/favicon.ico", "/manifest.json"];
+const publicPaths = [
+  "/login",
+  "/register",
+  "/verify-account",
+  "/reset-password",
+  "/favicon.ico",
+  "/manifest.json",
+  "/sw.js",   
+];
 
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
-  // ✅ Allow public and API paths
+  // Public pages
   if (
     publicPaths.some((path) => pathname.startsWith(path)) ||
     pathname.startsWith("/api/") ||
@@ -21,7 +29,6 @@ export async function middleware(req: NextRequest) {
 
   const token = req.cookies.get("token")?.value;
 
-  // 🚫 No token → redirect to login
   if (!token) {
     return NextResponse.redirect(new URL("/login", req.url), {
       headers: { "Cache-Control": "no-store" },
@@ -29,43 +36,79 @@ export async function middleware(req: NextRequest) {
   }
 
   try {
-    if (!process.env.JWT_SECRET) {
-      throw new Error("JWT_SECRET not defined");
+    const { payload } = await jwtVerify(
+      token,
+      new TextEncoder().encode(process.env.JWT_SECRET!)
+    );
+
+    const role = payload.role as string;
+    const isVerified = payload.isVerified as boolean;
+
+    // ============================
+    // CUSTOMER NOT VERIFIED
+    // ============================
+    if (
+      role === "customer" &&
+      !isVerified &&
+      pathname !== "/verify-account"
+    ) {
+      return NextResponse.redirect(new URL("/verify-account", req.url));
     }
 
-    const { payload } = await jwtVerify(token, new TextEncoder().encode(process.env.JWT_SECRET));
-    const role = payload.role as string;
-
-    console.log("✅ Middleware verified:", { path: pathname, role });
-
-    // CUSTOMER trying to access admin pages → block
-    if (pathname.startsWith("/admin") && role !== "admin") {
-      console.log("CUSTOMER trying to access admin pages → block");
+    // ============================
+    // VERIFIED CUSTOMER trying to open verify page
+    // ============================
+    if (
+      role === "customer" &&
+      isVerified &&
+      pathname === "/verify-account"
+    ) {
       return NextResponse.redirect(new URL("/dashboard", req.url));
     }
 
-    // ADMIN trying to access customer pages → block
-    if (!pathname.startsWith("/admin") && role === "admin" && pathname !== "/") {
-      console.log("ADMIN trying to access customer pages → block");
-      return NextResponse.redirect(new URL("/admin/dashboard", req.url));
+    // ============================
+    // CUSTOMER -> ADMIN BLOCK
+    // ============================
+    if (pathname.startsWith("/admin") && role !== "admin") {
+      return NextResponse.redirect(new URL("/dashboard", req.url));
     }
 
-    // ✅ Root redirect
+    // ============================
+    // ADMIN -> CUSTOMER BLOCK
+    // ============================
+    if (
+      role === "admin" &&
+      !pathname.startsWith("/admin") &&
+      pathname !== "/"
+    ) {
+      return NextResponse.redirect(
+        new URL("/admin/dashboard", req.url)
+      );
+    }
+
+    // ============================
+    // ROOT
+    // ============================
     if (pathname === "/") {
-      const redirectPath = role === "admin" ? "/admin/dashboard" : "/dashboard";
-      return NextResponse.redirect(new URL(redirectPath, req.url), {
-        headers: { "Cache-Control": "no-store" },
-      });
+      return NextResponse.redirect(
+        new URL(
+          role === "admin"
+            ? "/admin/dashboard"
+            : isVerified
+            ? "/dashboard"
+            : "/verify-account",
+          req.url
+        )
+      );
     }
 
     return NextResponse.next({
       headers: { "Cache-Control": "no-store" },
     });
-  } catch (error) {
-    console.error("❌ Middleware: invalid or expired token", error);
-    return NextResponse.redirect(new URL("/login", req.url), {
-      headers: { "Cache-Control": "no-store" },
-    });
+  } catch (err) {
+    console.error(err);
+
+    return NextResponse.redirect(new URL("/login", req.url));
   }
 }
 

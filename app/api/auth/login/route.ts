@@ -47,11 +47,18 @@ export async function POST(req: Request) {
     if (!isMatch) {
       return NextResponse.json({ error: "Invalid email or password" }, { status: 401 });
     }
-
     // 5️⃣ Create JWT with role info
-    const token = jwt.sign({ id: user._id, role }, process.env.JWT_SECRET!, {
+  const token = jwt.sign(
+    {
+      id: user._id,
+      role,
+      isVerified: role === "customer" ? user.isVerified : true,
+    },
+    process.env.JWT_SECRET!,
+    {
       expiresIn: "7d",
-    });
+    }
+  );
 
     // 6️⃣ Set token in cookie
     const cookieStore = await cookies();
@@ -84,6 +91,7 @@ export async function POST(req: Request) {
         name: fullName,
         email: user.email,
         phone: user.phone,
+        isVerified: role === "customer" ? user.isVerified : true,
         role,
         ...(role === "customer"
           ? {

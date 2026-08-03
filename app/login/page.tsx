@@ -97,10 +97,15 @@ useEffect(() => {
         cacheOfflineUser(data.user);
 
         // Redirect
-        if (data.user.role === "admin") {
-          router.push("/admin/dashboard");
-        } else {
-          router.push("/dashboard");
+       if (data.user.role === "admin") {
+            router.push("/admin/dashboard");
+        }
+        else if (!data.user.isVerified) {
+          console.log("User is not verified, redirecting to verify-account page");
+            router.push("/verify-account");
+        }
+        else {
+            router.push("/dashboard");
         }
       } else {
         setError("User data missing in response");

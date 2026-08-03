@@ -3,6 +3,7 @@ import { connectDB } from "@/lib/db";
 import { Customer } from "@/models/Customer";
 import { Otp } from "@/models/Otp";
 import jwt from "jsonwebtoken";
+import { cookies } from "next/headers";
 
 export async function POST(req: Request) {
   try {
@@ -55,10 +56,22 @@ export async function POST(req: Request) {
         id: user._id,
         role: "customer",
         accountType: user.accountType,
+        isVerified: true, // optional but recommended
       },
       process.env.JWT_SECRET!,
       { expiresIn: "7d" }
     );
+
+    // ✅ Update auth cookie
+    const cookieStore = await cookies();
+
+    cookieStore.set("token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge: 7 * 24 * 60 * 60,
+    });
 
     const userData = user.toObject();
     delete userData.password;

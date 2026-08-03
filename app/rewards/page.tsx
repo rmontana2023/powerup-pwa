@@ -49,7 +49,7 @@ export default function RewardsPage() {
   const [voucher, setVoucher] = useState<any>(null);
   const [otpModalOpen, setOtpModalOpen] = useState(false);
   const [enteredOTP, setEnteredOTP] = useState("");
-  const [generatedOTP, setGeneratedOTP] = useState("");
+  const [validatingOTP, setValidatingOTP] = useState(false);
   // const [redeemTimer, setRedeemTimer] = useState(30);
   const redeemTimerRef = useRef<NodeJS.Timeout | null>(null);
   const [qrOpen, setQrOpen] = useState(false);
@@ -214,7 +214,9 @@ export default function RewardsPage() {
   };
 
   const handleValidateOTP = async () => {
-    if (!user || !selectedReward) return;
+    if (!user || !selectedReward || validatingOTP) return;
+
+    setValidatingOTP(true);
 
     try {
       const verify = await fetch("/api/otp/verify-voucher", {
@@ -281,6 +283,7 @@ export default function RewardsPage() {
       console.error(err);
       alert("Something went wrong.");
     } finally {
+      setValidatingOTP(false);
       setLoadingVoucher(false);
     }
   };
@@ -562,11 +565,12 @@ export default function RewardsPage() {
                 >
                   Cancel
                 </button>
-                <button
+               <button
                   onClick={handleValidateOTP}
-                  className="px-4 py-2 rounded-lg bg-[#e66a00] text-white font-semibold"
+                  disabled={validatingOTP}
+                  className="px-4 py-2 rounded-lg bg-[#e66a00] text-white font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Confirm
+                  {validatingOTP ? "Validating..." : "Confirm"}
                 </button>
               </div>
             </div>
