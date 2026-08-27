@@ -6,7 +6,8 @@ import { Customer } from "@/models/Customer";
 
 export async function POST(req: NextRequest) {
   try {
-    const { email } = await req.json();
+    const body = await req.json();
+    const email = typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
 
     if (!email) {
       return NextResponse.json({ error: "Email is required" }, { status: 400 });
@@ -26,8 +27,8 @@ export async function POST(req: NextRequest) {
 
     const expires = new Date(Date.now() + 30 * 60 * 1000);
 
-    await Customer.updateOne(
-      { email },
+    const tokenUpdate = await Customer.updateOne(
+      { _id: user._id },
       {
         $set: {
           resetToken: hashedToken,
@@ -35,6 +36,10 @@ export async function POST(req: NextRequest) {
         },
       },
     );
+
+    if (tokenUpdate.matchedCount !== 1 || tokenUpdate.modifiedCount !== 1) {
+      throw new Error("Failed to save password reset token");
+    }
 
     const transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST,
@@ -46,11 +51,20 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    const resetLink = `${process.env.PUBLIC_APP_URL}/reset-password?token=${rawToken}&email=${email}`;
+    const isLocalRequest = ["localhost", "127.0.0.1"].includes(req.nextUrl.hostname);
+    const appUrl = isLocalRequest ? req.nextUrl.origin : process.env.PUBLIC_APP_URL;
+    if (!appUrl) {
+      throw new Error("PUBLIC_APP_URL is not configured");
+    }
+
+    const resetUrl = new URL("/reset-password", appUrl);
+    resetUrl.searchParams.set("token", rawToken);
+    resetUrl.searchParams.set("email", user.email);
+    const resetLink = resetUrl.toString();
 
     await transporter.sendMail({
       from: `"PowerUp Rewards" <${process.env.EMAIL_USER}>`,
-      to: email,
+      to: user.email,
       subject: "Reset Your Password",
       html: `
         <p>Hello ${user.firstName},</p>

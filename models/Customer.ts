@@ -21,6 +21,8 @@ const customerSchema = new mongoose.Schema(
       type: String,
       required: true,
       unique: true,
+      trim: true,
+      lowercase: true,
     },
 
     phone: {
@@ -80,6 +82,9 @@ const customerSchema = new mongoose.Schema(
 
     otp: String,
     otpExpires: Date,
+
+    resetToken: String,
+    resetTokenExpires: Date,
 
     isVerified: {
       type: Boolean,
