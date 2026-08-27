@@ -66,24 +66,22 @@ export default function DashboardPage() {
   const [offlineMode, setOfflineMode] = useState(false);
 
   const autoOpenQR = offlineMode;
-  
 
+  useEffect(() => {
+    // Set initial status after component mounts
+    setOfflineMode(!navigator.onLine);
 
-useEffect(() => {
-  // Set initial status after component mounts
-  setOfflineMode(!navigator.onLine);
+    const offline = () => setOfflineMode(true);
+    const online = () => setOfflineMode(false);
 
-  const offline = () => setOfflineMode(true);
-  const online = () => setOfflineMode(false);
+    window.addEventListener("offline", offline);
+    window.addEventListener("online", online);
 
-  window.addEventListener("offline", offline);
-  window.addEventListener("online", online);
-
-  return () => {
-    window.removeEventListener("offline", offline);
-    window.removeEventListener("online", online);
-  };
-}, []);
+    return () => {
+      window.removeEventListener("offline", offline);
+      window.removeEventListener("online", online);
+    };
+  }, []);
 
   useEffect(() => {
     async function fetchUser() {
@@ -97,56 +95,33 @@ useEffect(() => {
 
         const data = await res.json();
 
-        localStorage.setItem(
-          "lastSync",
-          new Date().toLocaleString("en-PH")
-        );
+        localStorage.setItem("lastSync", new Date().toLocaleString("en-PH"));
 
         setUser(data.user);
 
         const totalPoints = data.user?.totalPoints ?? 0;
 
-        const voucherRes = await fetch(
-          "/api/vouchers?customerId=" + data.user._id
-        );
+        const voucherRes = await fetch("/api/vouchers?customerId=" + data.user._id);
 
         const voucherData = await voucherRes.json();
 
-        const unredeemed = voucherData.vouchers.filter(
-          (v: any) => !v.redeemed
-        );
+        const unredeemed = voucherData.vouchers.filter((v: any) => !v.redeemed);
 
-        const locked = unredeemed.reduce(
-          (sum: number, v: any) => sum + (v.pointsLocked || 0),
-          0
-        );
+        const locked = unredeemed.reduce((sum: number, v: any) => sum + (v.pointsLocked || 0), 0);
 
         setLockedPoints(locked);
         setTotalPoints(totalPoints);
-        localStorage.setItem(
-          "user",
-          JSON.stringify(data.user)
-        );
+        localStorage.setItem("user", JSON.stringify(data.user));
 
-        localStorage.setItem(
-          "lockedPoints",
-          String(locked)
-        );
+        localStorage.setItem("lockedPoints", String(locked));
 
-        localStorage.setItem(
-          "totalPoints",
-          String(totalPoints)
-        );
+        localStorage.setItem("totalPoints", String(totalPoints));
 
         localStorage.setItem("customerQR", data.user.qrCode);
-        localStorage.setItem(
-          "customerName",
-          data.user.firstName + " " + data.user.lastName
-        );
+        localStorage.setItem("customerName", data.user.firstName + " " + data.user.lastName);
 
         setLoading(false);
       } catch (err) {
-
         console.log("Offline mode");
 
         const cached = localStorage.getItem("user");
@@ -162,11 +137,7 @@ useEffect(() => {
 
         setLockedPoints(Number(localStorage.getItem("lockedPoints")) || 0);
 
-        setTotalPoints(
-          Number(localStorage.getItem("totalPoints")) ||
-          user.totalPoints ||
-          0
-        );
+        setTotalPoints(Number(localStorage.getItem("totalPoints")) || user.totalPoints || 0);
 
         setLoading(false);
       }
@@ -198,9 +169,10 @@ useEffect(() => {
   }, [qrOpen]);
 
   if (!user) return null;
+  const totalTierPoints = totalPoints - lockedPoints;
 
   const userTiers = REWARD_TIERS[user.accountType || "ordinary"];
-  const canRedeem = userTiers.some((tier) => user.totalPoints >= tier.points);
+  const canRedeem = userTiers.some((tier) => user.totalPoints >= totalTierPoints);
 
   const startDrag = (e: React.PointerEvent) => {
     setDragging(true);
@@ -286,7 +258,7 @@ useEffect(() => {
   };
 
   return (
-   <LayoutWithNav user={user} offlineMode={offlineMode} autoOpenQR={autoOpenQR}>
+    <LayoutWithNav user={user} offlineMode={offlineMode} autoOpenQR={autoOpenQR}>
       <main className="min-h-screen bg-[var(--background)] text-[var(--foreground)] flex flex-col items-center px-4 py-6 relative">
         {/* Header */}
         <div className="w-full max-w-md flex justify-center items-center mb-6">
