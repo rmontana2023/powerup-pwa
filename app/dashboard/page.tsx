@@ -169,10 +169,11 @@ export default function DashboardPage() {
   }, [qrOpen]);
 
   if (!user) return null;
-  const totalTierPoints = totalPoints - lockedPoints;
-
   const userTiers = REWARD_TIERS[user.accountType || "ordinary"];
-  const canRedeem = userTiers.some((tier) => user.totalPoints >= totalTierPoints);
+  const availablePoints = Math.max(0, totalPoints - lockedPoints);
+  const minimumRedeemPoints = Math.min(...userTiers.map((tier) => tier.points));
+  const canRedeem = availablePoints >= minimumRedeemPoints;
+  const pointsNeeded = Math.max(0, minimumRedeemPoints - availablePoints);
 
   const startDrag = (e: React.PointerEvent) => {
     setDragging(true);
@@ -232,7 +233,7 @@ export default function DashboardPage() {
   };
 
   const handleRedeemSelect = (tier: { points: number; peso: number }) => {
-    if (user.totalPoints < tier.points) {
+    if (availablePoints < tier.points) {
       alert("Insufficient points");
       return;
     }
@@ -316,7 +317,7 @@ export default function DashboardPage() {
         {/* ---------- TOTAL POINTS CARD ---------- */}
         <div className="w-full max-w-md bg-[var(--card-bg)] backdrop-blur-xl border border-[var(--border-color)] rounded-3xl shadow-md p-6 mb-6 flex flex-col items-center text-center">
           <p className="text-6xl font-extrabold text-[var(--accent)] tracking-tight drop-shadow-sm">
-            {(totalPoints - lockedPoints).toFixed(2)}
+            {availablePoints.toFixed(2)}
           </p>
           <p className="text-lg font-medium text-[var(--text-muted)] mt-2">Available Points</p>
         </div>
@@ -348,22 +349,31 @@ export default function DashboardPage() {
               <p
                 key={idx}
                 className={`text-base font-semibold ${
-                  user.totalPoints >= tier.points ? "" : "opacity-50"
+                  availablePoints >= tier.points ? "" : "opacity-50"
                 }`}
               >
                 {tier.points} Points = ₱{tier.peso.toFixed(2)}
               </p>
             ))}
-            <div className="flex justify-end mt-4">
+            <div className="flex flex-col items-end mt-4 gap-2">
               <button
-                onClick={() => router.push("/rewards")}
-                className={`bg-[var(--accent)] hover:bg-[var(--accent-dark)] text-white px-6 py-2 rounded-lg transition-all ${
-                  !canRedeem ? "opacity-50 cursor-not-allowed" : ""
-                }`}
+                type="button"
+                onClick={handleRedeemClick}
                 disabled={!canRedeem}
+                aria-disabled={!canRedeem}
+                className={`px-6 py-2 rounded-lg transition-all font-semibold ${
+                  canRedeem
+                    ? "bg-[var(--accent)] hover:bg-[var(--accent-dark)] text-white"
+                    : "bg-gray-300 text-gray-500 cursor-not-allowed opacity-70"
+                }`}
               >
                 Redeem
               </button>
+              {!canRedeem && (
+                <p className="text-sm font-medium text-red-500 text-right" role="status">
+                  Insufficient points. Earn {pointsNeeded.toFixed(2)} more points to redeem.
+                </p>
+              )}
             </div>
           </div>
         </div>
@@ -383,8 +393,9 @@ export default function DashboardPage() {
                   <button
                     key={idx}
                     onClick={() => handleRedeemSelect(tier)}
+                    disabled={availablePoints < tier.points || loadingVoucher}
                     className={`w-full py-2 rounded-lg font-semibold transition-all ${
-                      user.totalPoints >= tier.points
+                      availablePoints >= tier.points
                         ? "bg-orange-500 hover:bg-orange-600 text-white"
                         : "bg-gray-200 text-gray-500 cursor-not-allowed"
                     }`}
