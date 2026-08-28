@@ -44,6 +44,12 @@ export async function middleware(req: NextRequest) {
     const role = payload.role as string;
     const isVerified = payload.isVerified as boolean;
 
+    // This PWA has no cashier interface. Cashier accounts must use their
+    // dedicated portal and cannot fall through to customer/admin pages.
+    if (role === "cashier") {
+      return NextResponse.redirect(new URL("/login", req.url));
+    }
+
     // ============================
     // CUSTOMER NOT VERIFIED
     // ============================

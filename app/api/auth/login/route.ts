@@ -10,22 +10,32 @@ export async function POST(req: Request) {
   try {
     const body = await req.json();
 
-    const identifier = body.identifier.trim().toLowerCase();
-    console.log(identifier, "identifier");
-    const password = body.password;
+    const identifier =
+      typeof body.identifier === "string" ? body.identifier.trim().toLowerCase() : "";
+    const password = typeof body.password === "string" ? body.password : "";
+
+    if (!identifier || !password) {
+      return NextResponse.json(
+        { error: "Email/phone and password are required" },
+        { status: 400 },
+      );
+    }
+
     await connectDB();
 
-    // 1️⃣ Try finding admin in User collection first
+    // Staff records live in User; customer records live in Customer.
     let user;
-    let role = "admin";
+    let role: "admin" | "cashier" | "customer";
 
-    // 1️⃣ ADMIN LOGIN → email only
+    // Staff login uses email only.
     if (identifier.includes("@")) {
       user = await User.findOne({ email: identifier });
     }
-    console.log(user, "User");
-    // 2️⃣ CUSTOMER LOGIN → email or phone
-    if (!user) {
+
+    if (user) {
+      role = user.role;
+    } else {
+      // Customer login uses email or phone.
       user = await Customer.findOne({
         $or: [{ email: identifier }, { phone: identifier }],
       });
@@ -39,14 +49,21 @@ export async function POST(req: Request) {
 
     // 4️⃣ Compare passwords
     const isMatch = await bcrypt.compare(password, user.password);
-    const test = await bcrypt.hash("P@ssw0rd", 10);
-    console.log(test);
-    console.log("Input password:", password);
-    console.log("Stored hash:", user.password);
-    console.log("Match result:", isMatch);
     if (!isMatch) {
       return NextResponse.json({ error: "Invalid email or password" }, { status: 401 });
     }
+
+    if (role === "cashier") {
+      return NextResponse.json(
+        { error: "Cashier accounts cannot access this portal" },
+        { status: 403 },
+      );
+    }
+
+    if (role !== "customer" && user.isActive === false) {
+      return NextResponse.json({ error: "Account is inactive" }, { status: 403 });
+    }
+
     // 5️⃣ Create JWT with role info
   const token = jwt.sign(
     {
@@ -72,8 +89,8 @@ export async function POST(req: Request) {
 
     let fullName = "";
 
-    if (role === "admin") {
-      fullName = user.name; // Admin still has name field
+    if (role !== "customer") {
+      fullName = user.name;
     } else {
       // Customer → build from firstname + middlename + lastname
       const first = user.firstName || "";
@@ -81,7 +98,6 @@ export async function POST(req: Request) {
       const last = user.lastName ? ` ${user.lastName}` : "";
       fullName = `${first}${middle}${last}`.trim();
     }
-    console.log("User logged in:", fullName);
     // 7️⃣ Send response based on role
     return NextResponse.json({
       success: true,

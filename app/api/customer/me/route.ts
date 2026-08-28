@@ -1,28 +1,20 @@
 import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/db";
 import { Customer } from "@/models/Customer";
-import jwt from "jsonwebtoken";
+import { getVerifiedCustomer } from "@/lib/server-auth";
 
-export async function GET(req: Request) {
+export async function GET() {
   try {
-    await connectDB();
-
-    // Get token from cookies
-    const token = req.headers
-      .get("cookie")
-      ?.split("; ")
-      .find((c) => c.startsWith("token="))
-      ?.split("=")[1];
-
-    if (!token) {
-      return NextResponse.json({ error: "No token provided" }, { status: 401 });
+    const auth = await getVerifiedCustomer();
+    if (!auth) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // verify token
-    const decoded: any = jwt.verify(token, process.env.JWT_SECRET!);
-
+    await connectDB();
     // fetch customer
-    const customer = await Customer.findById(decoded.id).select("-password");
+    const customer = await Customer.findById(auth.id).select(
+      "-password -otp -otpExpires -resetToken -resetTokenExpires -redemptionVersion",
+    );
 
     if (!customer) {
       return NextResponse.json({ error: "Customer not found" }, { status: 404 });

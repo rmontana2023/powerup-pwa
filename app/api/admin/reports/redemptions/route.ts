@@ -2,8 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { Redemption } from "@/models/Redemption";
 import "@/models/Customer"; // ✅ IMPORTANT FIX
 import { connectDB } from "@/lib/db";
+import { getAdminUser } from "@/lib/server-auth";
 
 export async function GET(req: NextRequest) {
+  if (!(await getAdminUser())) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   await connectDB();
 
   const { searchParams } = new URL(req.url);

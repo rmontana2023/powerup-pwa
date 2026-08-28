@@ -3,9 +3,14 @@ import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/db";
 import { Customer } from "@/models/Customer";
 import { Transaction } from "@/models/Transaction";
+import { getAdminUser } from "@/lib/server-auth";
 
 export async function GET() {
   try {
+    if (!(await getAdminUser())) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     await connectDB();
 
     const now = new Date();

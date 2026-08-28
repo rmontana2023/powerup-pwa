@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/db";
 import { Transaction } from "@/models/Transaction";
 import { Redemption } from "@/models/Redemption";
-import Voucher from "@/models/Voucher";
+import { getVerifiedCustomer } from "@/lib/server-auth";
 // 1️⃣ Define types for lean() results
 interface TxDoc {
   _id: any;
@@ -26,22 +26,21 @@ interface RdDoc {
   amount: number;
   type: "locked" | "redeemed";
 }
-export async function GET(req: Request) {
+export async function GET() {
   try {
-    const { searchParams } = new URL(req.url);
-    const customerId = searchParams.get("customerId");
-    if (!customerId) {
-      return NextResponse.json({ error: "Missing customerId" }, { status: 400 });
+    const auth = await getVerifiedCustomer();
+    if (!auth) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     await connectDB();
 
     // 2️⃣ Fetch transactions + redemptions with explicit typing
-    const transactions = await Transaction.find({ customerId })
+    const transactions = await Transaction.find({ customerId: auth.id })
       .sort({ taggedAt: -1 })
       .lean<TxDoc[]>();
 
-    const redemptions = await Redemption.find({ customerId })
+    const redemptions = await Redemption.find({ customerId: auth.id })
       .sort({ createdAt: -1 })
       .lean<RdDoc[]>();
 

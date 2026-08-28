@@ -3,14 +3,19 @@ import { connectDB } from "@/lib/db";
 import { Transaction } from "@/models/Transaction";
 import { Redemption } from "@/models/Redemption";
 import { Customer } from "@/models/Customer";
+import { getAdminUser } from "@/lib/server-auth";
 
 export async function GET(req: Request) {
+  if (!(await getAdminUser())) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   await connectDB();
 
   const { searchParams } = new URL(req.url);
   const filter = searchParams.get("filter") || "daily";
 
-  let startDate = new Date();
+  const startDate = new Date();
 
   if (filter === "weekly") {
     startDate.setDate(startDate.getDate() - 7);

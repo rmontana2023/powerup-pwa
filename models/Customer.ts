@@ -73,6 +73,12 @@ const customerSchema = new mongoose.Schema(
       default: 0,
     },
 
+    redemptionVersion: {
+      type: Number,
+      default: 0,
+      select: false,
+    },
+
     accountType: {
       type: String,
       enum: ["ordinary", "fleet"],

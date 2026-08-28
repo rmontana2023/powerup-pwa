@@ -8,7 +8,6 @@ import jwt from "jsonwebtoken";
 export async function POST(req: Request) {
   try {
     const { currentPassword, newPassword } = await req.json();
-    console.log("Received change password request", { currentPassword, newPassword });
     if (!currentPassword || !newPassword) {
       return NextResponse.json({ error: "All fields are required" }, { status: 400 });
     }
@@ -20,12 +19,10 @@ export async function POST(req: Request) {
     const payload: any = jwt.verify(token, process.env.JWT_SECRET!);
 
     const user = await Customer.findById(payload.id);
-    console.log("Changing password for user:", user);
     if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
 
     // Compare current password
     const isMatch = await bcrypt.compare(currentPassword, user.password);
-    console.log("Current password match:", isMatch);
     if (!isMatch) {
       return NextResponse.json({ error: "Current password is incorrect" }, { status: 401 });
     }

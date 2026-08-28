@@ -3,11 +3,21 @@ import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/db";
 import Voucher from "@/models/Voucher";
 import type { NextRequest } from "next/server";
+import { getVerifiedCustomer } from "@/lib/server-auth";
 
-export async function GET(req: NextRequest, context: any) {
-  const id = context.params.id; // <- THIS is valid
+export async function GET(
+  _req: NextRequest,
+  context: { params: Promise<{ id: string }> },
+) {
+  const auth = await getVerifiedCustomer();
+  if (!auth) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
 
-  console.log("🚀 Fetching vouchers for:", id);
+  const { id } = await context.params;
+  if (id !== auth.id) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
 
   await connectDB();
 

@@ -4,9 +4,14 @@ import { PointsConversion } from "@/models/PointsConversion";
 import { cookies } from "next/headers";
 import jwt from "jsonwebtoken";
 import { logAction } from "@/lib/log";
+import { getAdminUser } from "@/lib/server-auth";
 
 export async function GET() {
   try {
+    if (!(await getAdminUser())) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     await connectDB();
 
     // Get the latest conversion

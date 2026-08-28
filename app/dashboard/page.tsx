@@ -10,20 +10,7 @@ import Image from "next/image";
 import newlogo from "../../public/assets/logo/powerup-new-logo.png";
 import LayoutWithNav from "../components/LayoutWithNav";
 import { Copy } from "lucide-react";
-
-const REWARD_TIERS: Record<string, { points: number; peso: number }[]> = {
-  ordinary: [
-    { points: 50, peso: 20 },
-    { points: 100, peso: 40 },
-    { points: 250, peso: 100 },
-    { points: 500, peso: 250 },
-  ],
-  fleet: [
-    { points: 1000, peso: 500 },
-    { points: 2000, peso: 1200 },
-    { points: 5000, peso: 3500 },
-  ],
-};
+import { REWARD_TIERS } from "@/lib/reward-tiers";
 interface User {
   _id: string;
   name: string;

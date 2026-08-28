@@ -26,10 +26,12 @@ export async function GET() {
     let user = null;
 
     // ✅ Check which collection based on role
-    if (decoded.role === "admin") {
+    if (decoded.role === "admin" || decoded.role === "cashier") {
       user = await User.findById(decoded.id).select("-password");
     } else {
-      user = await Customer.findById(decoded.id).select("-password");
+      user = await Customer.findById(decoded.id).select(
+        "-password -otp -otpExpires -resetToken -resetTokenExpires -redemptionVersion",
+      );
     }
 
     if (!user) {

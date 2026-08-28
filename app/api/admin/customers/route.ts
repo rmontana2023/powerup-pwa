@@ -5,9 +5,14 @@ import { Customer } from "@/models/Customer";
 import { logAction } from "@/lib/log";
 import { cookies } from "next/headers";
 import jwt from "jsonwebtoken";
+import { getAdminUser } from "@/lib/server-auth";
 
 export async function GET(req: Request) {
   try {
+    if (!(await getAdminUser())) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     await connectDB();
 
     const { searchParams } = new URL(req.url);
