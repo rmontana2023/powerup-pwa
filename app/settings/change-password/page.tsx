@@ -1,14 +1,14 @@
 "use client";
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, useRef } from "react";
 import LayoutWithNav from "@/app/components/LayoutWithNav";
 import Swal from "sweetalert2";
+import { getPasswordError, PASSWORD_REQUIREMENTS } from "@/lib/password-validation";
 import Image from "next/image";
 import { Eye, EyeOff } from "lucide-react";
 import newlogo from "../../../public/assets/logo/powerup-new-logo.png";
 
 export default function ChangePasswordPage() {
-  const router = useRouter();
+  const submitting = useRef(false);
   const [loading, setLoading] = useState(false);
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -22,17 +22,15 @@ export default function ChangePasswordPage() {
 
   useEffect(() => {
     const stored = localStorage.getItem("user");
-    if (stored) setUser(JSON.parse(stored));
+    if (stored) {
+      try { setUser(JSON.parse(stored)); } catch { localStorage.removeItem("user"); }
+    }
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const token = localStorage.getItem("token");
-    if (!token) {
-      Swal.fire("Error", "You are not logged in.", "error");
-      return;
-    }
+    if (submitting.current) return;
 
     if (!currentPassword || !newPassword || !confirmPassword) {
       Swal.fire("Error", "Please fill in all fields.", "error");
@@ -44,6 +42,13 @@ export default function ChangePasswordPage() {
       return;
     }
 
+    const passwordError = getPasswordError(newPassword);
+    if (passwordError || newPassword === currentPassword) {
+      Swal.fire("Error", passwordError || "New password must differ from your current password.", "error");
+      return;
+    }
+
+    submitting.current = true;
     setLoading(true);
 
     try {
@@ -51,38 +56,29 @@ export default function ChangePasswordPage() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
         },
+        credentials: "same-origin",
         body: JSON.stringify({ currentPassword, newPassword }),
       });
 
       const data = await res.json();
 
       if (res.ok && data.success) {
-        Swal.fire("Success", "Password updated successfully! Please log in again.", "success").then(
-          () => {
-            // Optionally, redirect or clear fields
-            setCurrentPassword("");
-            setNewPassword("");
-            setConfirmPassword("");
-
-            // ✅ FORCE LOGOUT
-            localStorage.removeItem("user");
-            localStorage.removeItem("customerId");
-            localStorage.removeItem("token");
-
-            localStorage.clear();
-
-            // ✅ Redirect to login
-            window.location.href = "/login";
-          }
-        );
+        setCurrentPassword("");
+        setNewPassword("");
+        setConfirmPassword("");
+        localStorage.removeItem("user");
+        localStorage.removeItem("customerId");
+        localStorage.removeItem("token");
+        await Swal.fire("Success", "Password updated successfully! Please log in again.", "success");
+        window.location.replace("/login");
       } else {
         Swal.fire("Error", data.error || "Update failed", "error");
       }
-    } catch (err) {
+    } catch {
       Swal.fire("Error", "Something went wrong. Please try again.", "error");
     } finally {
+      submitting.current = false;
       setLoading(false);
     }
   };
@@ -104,6 +100,9 @@ export default function ChangePasswordPage() {
               <span className="text-gray-400 mb-1">Current Password</span>
               <input
                 type={showCurrent ? "text" : "password"}
+                required
+                disabled={loading}
+                autoComplete="current-password"
                 value={currentPassword}
                 onChange={(e) => setCurrentPassword(e.target.value)}
                 placeholder="Enter current password"
@@ -112,6 +111,7 @@ export default function ChangePasswordPage() {
               />
               <button
                 type="button"
+                aria-label={showCurrent ? "Hide password" : "Show password"}
                 onClick={() => setShowCurrent(!showCurrent)}
                 className="absolute right-3 mt-3 top-[36px] transform -translate-y-1/2 text-gray-400 hover:text-white"
               >
@@ -124,6 +124,9 @@ export default function ChangePasswordPage() {
               <span className="text-gray-400 mb-1">New Password</span>
               <input
                 type={showNew ? "text" : "password"}
+                required
+                disabled={loading}
+                autoComplete="new-password"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
                 placeholder="Enter new password"
@@ -132,6 +135,7 @@ export default function ChangePasswordPage() {
               />
               <button
                 type="button"
+                aria-label={showNew ? "Hide password" : "Show password"}
                 onClick={() => setShowNew(!showNew)}
                 className="absolute right-3 mt-3 top-[36px] transform -translate-y-1/2 text-gray-400 hover:text-white"
               >
@@ -139,11 +143,16 @@ export default function ChangePasswordPage() {
               </button>
             </label>
 
+            <p className="text-sm text-gray-400">{PASSWORD_REQUIREMENTS} Maximum 72 characters.</p>
+
             {/* CONFIRM PASSWORD */}
             <label className="flex flex-col relative">
               <span className="text-gray-400 mb-1">Confirm New Password</span>
               <input
                 type={showConfirm ? "text" : "password"}
+                required
+                disabled={loading}
+                autoComplete="new-password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 placeholder="Confirm new password"
@@ -152,6 +161,7 @@ export default function ChangePasswordPage() {
               />
               <button
                 type="button"
+                aria-label={showConfirm ? "Hide password" : "Show password"}
                 onClick={() => setShowConfirm(!showConfirm)}
                 className="absolute right-3 mt-3 top-[36px] transform -translate-y-1/2 text-gray-400 hover:text-white"
               >
@@ -161,10 +171,11 @@ export default function ChangePasswordPage() {
 
             <button
               type="submit"
+              disabled={loading}
               className="bg-[var(--accent)] hover:bg-powerup-700 text-white font-semibold py-3 rounded-lg 
                transition shadow-lg shadow-powerup-600/30"
             >
-              Update Password
+              {loading ? "Updating…" : "Update Password"}
             </button>
           </form>
         </div>
