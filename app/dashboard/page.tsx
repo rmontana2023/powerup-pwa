@@ -23,6 +23,11 @@ interface User {
   totalPoints: number;
 }
 
+interface PointsConversion {
+  points: number;
+  liters: number;
+}
+
 interface Voucher {
   code: string;
   amount: number;
@@ -50,7 +55,56 @@ export default function DashboardPage() {
   const [lockedPoints, setLockedPoints] = useState(0);
   const [totalPoints, setTotalPoints] = useState(0);
 
+  const [conversion, setConversion] = useState<PointsConversion | null>(null);
+  const [conversionLoading, setConversionLoading] = useState(true);
   const [offlineMode, setOfflineMode] = useState(false);
+
+  useEffect(() => {
+    let controller: AbortController | undefined;
+
+    async function fetchConversion() {
+      controller?.abort();
+      const request = new AbortController();
+      controller = request;
+      setConversionLoading(true);
+
+      try {
+        const response = await fetch("/api/points-conversion", {
+          cache: "no-store",
+          signal: request.signal,
+        });
+        if (!response.ok) throw new Error("Failed to fetch conversion");
+
+        const data: PointsConversion = await response.json();
+        if (
+          !Number.isFinite(data.points) || data.points <= 0 ||
+          !Number.isFinite(data.liters) || data.liters <= 0
+        ) {
+          throw new Error("Invalid conversion");
+        }
+        if (!request.signal.aborted) setConversion(data);
+      } catch {
+        if (!request.signal.aborted) setConversion(null);
+      } finally {
+        if (!request.signal.aborted) setConversionLoading(false);
+      }
+    }
+
+    void fetchConversion();
+    window.addEventListener("online", fetchConversion);
+    window.addEventListener("focus", fetchConversion);
+    return () => {
+      controller?.abort();
+      window.removeEventListener("online", fetchConversion);
+      window.removeEventListener("focus", fetchConversion);
+    };
+  }, []);
+
+  const earnPointsLabel = conversionLoading
+    ? "Loading points rate…"
+    : conversion
+      ? `${conversion.liters} ${conversion.liters === 1 ? "liter" : "liters"} = ${conversion.points} ${conversion.points === 1 ? "point" : "points"}`
+      : "Points rate unavailable";
 
   const autoOpenQR = offlineMode;
 
@@ -312,18 +366,23 @@ export default function DashboardPage() {
         {/* Earn Points */}
         <div className="w-full max-w-md mt-6 mb-5">
           <h2 className="text-lg font-bold mb-4">Earn Points</h2>
+          {offlineMode && conversion && (
+            <p className="text-xs text-[var(--text-muted)] mb-3">
+              Offline — showing the last saved points rate.
+            </p>
+          )}
           <div className="grid grid-cols-2 gap-4">
             {/* Motorcycle */}
             <div className="flex flex-col items-center bg-[var(--card-bg)] border border-[var(--border-color)] p-4 rounded-2xl shadow-md">
               <FaMotorcycle className="w-10 h-10 text-[var(--accent)] mb-2" />
               <p className="text-sm font-semibold">Motorcycles</p>
-              <p className="text-xs text-[var(--text-muted)] mt-1">1 liter = 1 point</p>
+              <p className="text-xs text-[var(--text-muted)] mt-1">{earnPointsLabel}</p>
             </div>
             {/* Cars */}
             <div className="flex flex-col items-center bg-[var(--card-bg)] border border-[var(--border-color)] p-4 rounded-2xl shadow-md">
               <FaCar className="w-10 h-10 text-[var(--accent)] mb-2" />
               <p className="text-sm font-semibold">Cars</p>
-              <p className="text-xs text-[var(--text-muted)] mt-1">1 liter = 1 point</p>
+              <p className="text-xs text-[var(--text-muted)] mt-1">{earnPointsLabel}</p>
             </div>
           </div>
         </div>
