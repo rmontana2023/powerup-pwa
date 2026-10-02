@@ -6,7 +6,7 @@ import newlogo from "../../public/assets/logo/powerup-new-logo.png";
 import LayoutWithNav from "../components/LayoutWithNav";
 import VoucherList from "../components/VoucherList";
 import { POWERUP_LOGO } from "@/lib/logoBase64";
-import { QRCodeSVG } from "qrcode.react";
+import { QRCodeSVG } from "@/app/components/ScannerQRCode";
 import { Search, History, HelpCircle, Gift } from "lucide-react";
 import QRCode from "qrcode"
 import { X, User } from "lucide-react";
@@ -322,7 +322,8 @@ export default function RewardsPage() {
 
     const qrData = await QRCode.toDataURL(voucher.code, {
       width: 500,
-      margin: 1,
+      margin: 4,
+      color: { dark: "#000000ff", light: "#ffffffff" },
     });
 
     const qr = new window.Image();

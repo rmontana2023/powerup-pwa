@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import LayoutWithNav from "@/app/components/LayoutWithNav";
@@ -8,10 +9,61 @@ interface User {
   name: string;
   email: string;
   qrCode: string;
+  firstName: string;
+  middleName?: string;
+  lastName: string;
+  phone: string;
+  birthDate: string;
 }
 export default function PersonalDetailsPage() {
-  const [customer, setCustomer] = useState<any>(null);
+  const [customer, setCustomer] = useState<User | null>(null);
   const [user, setUser] = useState<User | null>(null);
+
+  const [editing, setEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [message, setMessage] = useState("");
+  const [draft, setDraft] = useState({ firstName: "", middleName: "", lastName: "", phone: "", birthDate: "" });
+
+  function startEditing() {
+    if (!customer) return;
+    setDraft({ firstName: customer.firstName, middleName: customer.middleName || "",
+      lastName: customer.lastName, phone: customer.phone, birthDate: customer.birthDate?.split("T")[0] || "" });
+    setError("");
+    setMessage("");
+    setEditing(true);
+  }
+
+  async function saveDetails(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setSaving(true);
+    setError("");
+    try {
+      const res = await fetch("/api/customer/me", {
+        method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(draft),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Unable to save personal details");
+      setCustomer(data.customer);
+      setEditing(false);
+      setMessage("Personal details saved.");
+      const updatedUser = { ...user, ...data.customer,
+        name: [data.customer.firstName, data.customer.middleName, data.customer.lastName].filter(Boolean).join(" ") };
+      setUser(updatedUser);
+      try {
+        localStorage.setItem("user", JSON.stringify(updatedUser));
+        localStorage.setItem("customerName", updatedUser.name);
+        localStorage.setItem("customerMobile", updatedUser.phone);
+      } catch {
+        // The account was saved even if this device cannot cache it.
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unable to save personal details");
+    } finally {
+      setSaving(false);
+    }
+  }
 
   useEffect(() => {
     async function loadUser() {
@@ -37,9 +89,12 @@ export default function PersonalDetailsPage() {
       try {
         const res = await fetch("/api/customer/me");
         const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Unable to load personal details");
         setCustomer(data.customer);
       } catch (error) {
-        console.log("⚠️ Error loading customer:", error);
+        setError(error instanceof Error ? error.message : "Unable to load personal details");
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -61,6 +116,37 @@ export default function PersonalDetailsPage() {
 
         {/* Details Card */}
         <div className="w-full max-w-md bg-white rounded-2xl shadow-md p-5 border border-gray-100 space-y-4">
+          {loading && <p className="text-gray-600" role="status">Loading personal details…</p>}
+          {error && <p className="text-red-600" role="alert">{error}</p>}
+          {message && <p className="text-green-700" role="status">{message}</p>}
+          {editing ? (
+            <form onSubmit={saveDetails} className="space-y-4">
+              <fieldset disabled={saving} className="space-y-4 disabled:opacity-60">
+                {([
+                  ["firstName", "First Name", "text", "given-name"],
+                  ["middleName", "Middle Name (optional)", "text", "additional-name"],
+                  ["lastName", "Last Name", "text", "family-name"],
+                  ["phone", "Mobile Number", "tel", "tel-national"],
+                  ["birthDate", "Birthdate", "date", "bday"],
+                ] as const).map(([field, label, type, autoComplete]) => (
+                  <label key={field} className="block text-sm font-medium text-gray-700">
+                    {label}
+                    <input type={type} autoComplete={autoComplete} value={draft[field]}
+                      required={field !== "middleName"} maxLength={field === "phone" ? 11 : 100}
+                      pattern={field === "phone" ? "09[0-9]{9}" : undefined}
+                      placeholder={field === "phone" ? "09XXXXXXXXX" : undefined}
+                      onChange={(e) => setDraft({ ...draft, [field]: e.target.value })}
+                      className="mt-1 w-full rounded-lg border border-gray-300 bg-white p-3 text-gray-900 focus:outline-orange-500" />
+                  </label>
+                ))}
+                <div className="flex gap-3">
+                  <button type="submit" className="rounded-lg bg-orange-500 px-4 py-3 font-semibold text-black">{saving ? "Saving…" : "Save changes"}</button>
+                  <button type="button" onClick={() => { setEditing(false); setError(""); }} className="rounded-lg bg-gray-100 px-4 py-3 text-gray-800">Cancel</button>
+                </div>
+              </fieldset>
+            </form>
+          ) : customer && (
+            <>
           <DetailItem label="First Name" value={customer?.firstName} />
 
           <DetailItem label="Middle Name" value={customer?.middleName} />
@@ -79,6 +165,10 @@ export default function PersonalDetailsPage() {
                 : "—"
             }
           />
+          <button type="button" onClick={startEditing} className="w-full rounded-lg bg-orange-500 p-3 font-semibold text-black">Edit personal details</button>
+          <Link href="/settings/change-email" className="block text-center text-sm">Change email address</Link>
+            </>
+          )}
         </div>
       </main>
     </LayoutWithNav>
@@ -89,7 +179,7 @@ export default function PersonalDetailsPage() {
 /* Reusable Detail Display Item   */
 /* ------------------------------ */
 
-function DetailItem({ label, value }: { label: string; value: any }) {
+function DetailItem({ label, value }: { label: string; value: string | undefined }) {
   return (
     <div className="flex flex-col">
       <p className="text-sm text-gray-500 font-medium">{label}</p>

@@ -1,6 +1,6 @@
 "use client";
 import React, { useEffect, useRef, useState } from "react";
-import { QRCodeSVG } from "qrcode.react";
+import { QRCodeSVG } from "@/app/components/ScannerQRCode";
 import { X } from "lucide-react";
 
 interface SlideToRevealQRProps {

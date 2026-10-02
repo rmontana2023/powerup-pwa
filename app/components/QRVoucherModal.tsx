@@ -1,7 +1,7 @@
 "use client";
 import React, { useEffect, useRef } from "react";
 import { X } from "lucide-react";
-import { QRCodeSVG } from "qrcode.react";
+import { QRCodeSVG } from "@/app/components/ScannerQRCode";
 import * as htmlToImage from "html-to-image";
 
 interface QRVoucherModalProps {
@@ -79,7 +79,7 @@ export default function QRVoucherModal({
               if (!qrElement) return;
 
               try {
-                const dataUrl = await htmlToImage.toPng(qrElement);
+                const dataUrl = await htmlToImage.toPng(qrElement, { backgroundColor: "#ffffff" });
                 const link = document.createElement("a");
                 link.download = `${voucher.code}.png`;
                 link.href = dataUrl;

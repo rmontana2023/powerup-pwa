@@ -6,7 +6,7 @@ import newlogo from "@/public/assets/logo/powerup-new-logo.png";
 import { POWERUP_LOGO } from "@/lib/logoBase64";
 import { Gift, ArrowLeft, Loader2, CheckCircle, Clock, X } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { QRCodeSVG } from "qrcode.react";
+import { QRCodeSVG } from "@/app/components/ScannerQRCode";
 import QRCode from "qrcode"
 import Swal from "sweetalert2";
 
@@ -106,7 +106,8 @@ export default function MyVouchersPage() {
     // ---------- QR ----------
     const qrData = await QRCode.toDataURL(selectedVoucher.code, {
       width: 500,
-      margin: 1,
+      margin: 4,
+      color: { dark: "#000000ff", light: "#ffffffff" },
     });
 
   const qr = new window.Image();

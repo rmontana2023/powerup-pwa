@@ -1,7 +1,7 @@
 "use client";
 import React from "react";
 import { useEffect, useState, useRef } from "react";
-import { QRCodeSVG } from "qrcode.react";
+import { QRCodeSVG } from "@/app/components/ScannerQRCode";
 import { useRouter } from "next/navigation";
 import * as htmlToImage from "html-to-image";
 import { X, User } from "lucide-react";
@@ -546,7 +546,7 @@ export default function DashboardPage() {
                     if (!qrElement) return;
 
                     try {
-                      const dataUrl = await htmlToImage.toPng(qrElement);
+                      const dataUrl = await htmlToImage.toPng(qrElement, { backgroundColor: "#ffffff" });
                       const link = document.createElement("a");
                       link.download = `${voucher.code}.png`;
                       link.href = dataUrl;
