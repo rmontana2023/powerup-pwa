@@ -1,6 +1,9 @@
 import { Schema, model, models } from "mongoose";
 
 const voucherSchema = new Schema({
+  rewardId: { type: String, default: "" },
+  rewardTitle: { type: String, default: "" },
+  rewardKind: { type: String, enum: ["cash", "item"], default: "cash" },
   code: { type: String, required: true, unique: true },
   amount: { type: Number, required: true }, // points or peso
   points: { type: Number, required: true }, // points or peso

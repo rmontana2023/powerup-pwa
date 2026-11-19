@@ -1,4 +1,5 @@
 "use client";
+import { isAppOnline } from "@/lib/connectivity";
 import React from "react";
 import { useEffect, useState, useRef } from "react";
 import { QRCodeSVG } from "@/app/components/ScannerQRCode";
@@ -9,8 +10,10 @@ import { FaMotorcycle, FaCar } from "react-icons/fa";
 import Image from "next/image";
 import newlogo from "../../public/assets/logo/powerup-new-logo.png";
 import LayoutWithNav from "../components/LayoutWithNav";
+import PromoSection from "../components/PromoSection";
 import { Copy } from "lucide-react";
-import { REWARD_TIERS } from "@/lib/reward-tiers";
+import { RewardTier } from "@/lib/reward-tiers";
+import { useRewardCatalog } from "../components/useRewardCatalog";
 interface User {
   _id: string;
   name: string;
@@ -29,6 +32,7 @@ interface PointsConversion {
 }
 
 interface Voucher {
+  rewardTitle?: string;
   code: string;
   amount: number;
   expiresAt: Date;
@@ -37,6 +41,7 @@ interface Voucher {
 export default function DashboardPage() {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
+  const { tiers: userTiers, rewardsError } = useRewardCatalog(user?.accountType);
   const [loading, setLoading] = useState(true);
   // const [sidebarOpen, setSidebarOpen] = useState(false);
 
@@ -110,9 +115,9 @@ export default function DashboardPage() {
 
   useEffect(() => {
     // Set initial status after component mounts
-    setOfflineMode(!navigator.onLine);
+    setOfflineMode(!isAppOnline());
 
-    const offline = () => setOfflineMode(true);
+    const offline = () => setOfflineMode(!isAppOnline());
     const online = () => setOfflineMode(false);
 
     window.addEventListener("offline", offline);
@@ -210,10 +215,9 @@ export default function DashboardPage() {
   }, [qrOpen]);
 
   if (!user) return null;
-  const userTiers = REWARD_TIERS[user.accountType || "ordinary"];
   const availablePoints = Math.max(0, totalPoints - lockedPoints);
-  const minimumRedeemPoints = Math.min(...userTiers.map((tier) => tier.points));
-  const canRedeem = availablePoints >= minimumRedeemPoints;
+  const minimumRedeemPoints = userTiers.length ? Math.min(...userTiers.map((tier) => tier.points)) : 0;
+  const canRedeem = userTiers.length > 0 && availablePoints >= minimumRedeemPoints;
   const pointsNeeded = Math.max(0, minimumRedeemPoints - availablePoints);
 
   const startDrag = (e: React.PointerEvent) => {
@@ -242,7 +246,7 @@ export default function DashboardPage() {
     if (!canRedeem) return;
     setShowSlideDialog(true);
   };
-  const revealVoucher = async (selectedTier?: { points: number; peso: number }) => {
+  const revealVoucher = async (selectedTier?: RewardTier) => {
     if (!selectedTier || loadingVoucher) return;
 
     setLoadingVoucher(true);
@@ -252,6 +256,7 @@ export default function DashboardPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           customerId: user._id,
+          rewardId: selectedTier._id,
           amount: selectedTier.peso,
           points: selectedTier.points,
         }),
@@ -273,7 +278,7 @@ export default function DashboardPage() {
     }
   };
 
-  const handleRedeemSelect = (tier: { points: number; peso: number }) => {
+  const handleRedeemSelect = (tier: RewardTier) => {
     if (availablePoints < tier.points) {
       alert("Insufficient points");
       return;
@@ -398,7 +403,7 @@ export default function DashboardPage() {
                   availablePoints >= tier.points ? "" : "opacity-50"
                 }`}
               >
-                {tier.points} Points = ₱{tier.peso.toFixed(2)}
+                {tier.points} Points = {tier.title || `PHP ${tier.peso.toFixed(2)}`}
               </p>
             ))}
             <div className="flex flex-col items-end mt-4 gap-2">
@@ -424,6 +429,9 @@ export default function DashboardPage() {
           </div>
         </div>
 
+        {rewardsError && <p role="alert" className="mb-4 text-sm text-red-400">{rewardsError}</p>}
+        <PromoSection />
+
         {/* Redeem Selection Modal */}
         {showSlideDialog && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
@@ -446,7 +454,7 @@ export default function DashboardPage() {
                         : "bg-gray-200 text-gray-500 cursor-not-allowed"
                     }`}
                   >
-                    ₱{tier.peso} — {tier.points} Points
+                    {tier.title || `PHP ${tier.peso}`} — {tier.points} Points
                   </button>
                 ))}
               </div>
@@ -493,7 +501,7 @@ export default function DashboardPage() {
 
               {/* Voucher Amount */}
               <p className="text-3xl font-bold text-orange-500 mb-1">
-                ₱{voucher.amount ? voucher.amount : "N/A"} OFF
+                {voucher.rewardTitle || `PHP ${voucher.amount} OFF`}
               </p>
 
               {/* “E-Voucher” Label */}
@@ -565,7 +573,7 @@ export default function DashboardPage() {
                     try {
                       const shareData = {
                         title: "PowerUp E-Voucher",
-                        text: `Here’s my PowerUp voucher worth ₱${voucher.amount}. Code: ${voucher.code}`,
+                        text: `${voucher.rewardTitle || `PHP ${voucher.amount} voucher`}. Code: ${voucher.code}`,
                         url: window.location.origin,
                       };
                       if (navigator.share) {

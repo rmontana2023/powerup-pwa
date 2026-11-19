@@ -1,4 +1,5 @@
 "use client";
+import { isAppOnline } from "@/lib/connectivity";
 import React, { useEffect, useRef, useState } from "react";
 import { QRCodeSVG } from "@/app/components/ScannerQRCode";
 import { X } from "lucide-react";
@@ -283,7 +284,7 @@ export default function SlideToRevealQR({
 
                 <button
                  onClick={() => {
-                    if (navigator.onLine) {
+                    if (isAppOnline()) {
                       window.location.reload();
                     }
                   }}

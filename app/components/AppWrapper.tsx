@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from "react";
 import { usePathname } from "next/navigation";
 import SplashScreen from "./SplashScreen";
 import InstallPWAButton from "./InstallPWAButton";
+import PromoPopup from "./PromoPopup";
 
 export default function AppWrapper({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -25,6 +26,8 @@ export default function AppWrapper({ children }: { children: React.ReactNode }) 
     const triggerPoint = 90;
 
     const onTouchStart = (e: TouchEvent) => {
+      // Keep modal scroll gestures inside the dialog.
+      if (document.querySelector('[role="dialog"], [aria-modal="true"]')) return;
       if (window.scrollY === 0) {
         pulling = true;
         startY = e.touches[0].clientY;
@@ -130,6 +133,7 @@ export default function AppWrapper({ children }: { children: React.ReactNode }) 
       {/* Your actual UI (NOT moved) */}
       {showSplash && <SplashScreen fadeOut={fadeOut} />}
       {!showSplash && children}
+      {!showSplash && pathname === "/dashboard" && <PromoPopup />}
       <InstallPWAButton />
     </>
   );

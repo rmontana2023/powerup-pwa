@@ -1,4 +1,5 @@
 "use client";
+import { isAppOnline } from "@/lib/connectivity";
 import React, { useEffect, useState, useRef } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -11,7 +12,8 @@ import { Search, History, HelpCircle, Gift } from "lucide-react";
 import QRCode from "qrcode"
 import { X, User } from "lucide-react";
 import Swal from "sweetalert2";
-import { REWARD_TIERS } from "@/lib/reward-tiers";
+import { RewardTier } from "@/lib/reward-tiers";
+import { useRewardCatalog } from "../components/useRewardCatalog";
 
 interface User {
   _id: string;
@@ -30,6 +32,7 @@ interface Points {
 export default function RewardsPage() {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
+  const { tiers, rewardsError } = useRewardCatalog(user?.accountType);
   const [totalPoints, setTotalPoints] = useState(0);
   const [loading, setLoading] = useState(true);
   const [loadingVoucher, setLoadingVoucher] = useState(false);
@@ -40,7 +43,7 @@ export default function RewardsPage() {
   // const [redeemTimer, setRedeemTimer] = useState(30);
   const redeemTimerRef = useRef<NodeJS.Timeout | null>(null);
   const [qrOpen, setQrOpen] = useState(false);
-  const [selectedReward, setSelectedReward] = useState<{ points: number; peso: number } | null>(
+  const [selectedReward, setSelectedReward] = useState<RewardTier | null>(
     null
   );
   const voucherRef = useRef<HTMLDivElement | null>(null);
@@ -53,9 +56,9 @@ export default function RewardsPage() {
     
     useEffect(() => {
       // Set initial status after component mounts
-      setOfflineMode(!navigator.onLine);
+      setOfflineMode(!isAppOnline());
     
-      const offline = () => setOfflineMode(true);
+      const offline = () => setOfflineMode(!isAppOnline());
       const online = () => setOfflineMode(false);
     
       window.addEventListener("offline", offline);
@@ -113,20 +116,13 @@ export default function RewardsPage() {
   //     if (redeemTimerRef.current) clearInterval(redeemTimerRef.current);
   //   };
   // }, [qrOpen]);
-  const handleRedeem = async (points: number, peso: number) => {
+  const handleRedeem = async (points: number, peso: number, reward?: RewardTier) => {
     if (!user) return alert("Please log in first.");
     if (totalPoints < points) return alert("Insufficient points to redeem this voucher.");
     // ⛔ STOP — ask for confirmation first
     const confirm = await Swal.fire({
       title: "Generate Voucher?",
-      html: `
-      <div style="font-size:14px">
-        You are about to redeem 
-        <b>${points} points</b> for 
-        <b>₱${peso}</b> voucher.<br/><br/>
-        This action cannot be undone.
-      </div>
-    `,
+      text: `Use ${points} points for ${reward?.title || `PHP ${peso} voucher`}?`,
       icon: "question",
       showCancelButton: true,
       confirmButtonText: "Yes, continue",
@@ -141,7 +137,7 @@ export default function RewardsPage() {
     // ❌ If cancelled, stop process
     if (!confirm.isConfirmed) return;
 
-    setSelectedReward({ points, peso });
+    setSelectedReward(reward ?? { points, peso });
 
     try {
       const res = await fetch("/api/otp/send-voucher", {
@@ -235,6 +231,7 @@ export default function RewardsPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           customerId: user._id,
+          rewardId: selectedReward._id,
           amount: selectedReward.peso,
           points: selectedReward.points,
         }),
@@ -349,7 +346,7 @@ export default function RewardsPage() {
     ctx.font = "bold 88px Arial";
 
     ctx.fillText(
-      `₱${voucher.amount} OFF`,
+      voucher.rewardTitle || `₱${voucher.amount} OFF`,
       canvas.width / 2,
       980
     );
@@ -519,10 +516,12 @@ export default function RewardsPage() {
           </button>
         </div>
 
+
+        {rewardsError && <p role="alert" className="text-sm text-red-400">{rewardsError}</p>}
         {/* Voucher list based on account type */}
         {user?.accountType && (
           <VoucherList
-            tiers={REWARD_TIERS[user.accountType]}
+            tiers={tiers}
             onRedeem={handleRedeem}
             totalPoints={totalPoints - lockedPoints} // ✅ pass here
           />
@@ -608,7 +607,7 @@ export default function RewardsPage() {
 
               {/* Voucher Amount */}
               <p className="text-3xl font-bold text-orange-500 mb-1">
-                ₱{voucher.amount ? voucher.amount : "N/A"} OFF
+                {voucher.rewardTitle || `PHP ${voucher.amount} OFF`}
               </p>
 
               {/* “E-Voucher” Label */}

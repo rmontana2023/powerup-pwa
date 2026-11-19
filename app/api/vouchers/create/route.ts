@@ -3,7 +3,7 @@ import mongoose from "mongoose";
 import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/db";
 import { getVerifiedCustomer } from "@/lib/server-auth";
-import { REWARD_TIERS } from "@/lib/reward-tiers";
+import { availableRewards } from "@/lib/customer-rewards";
 import Voucher from "@/models/Voucher";
 import { Customer } from "@/models/Customer";
 import { Redemption } from "@/models/Redemption";
@@ -48,9 +48,9 @@ export async function POST(req: Request) {
           throw new VoucherRequestError("Customer not found", 404);
         }
 
-        const tiers = REWARD_TIERS[customer.accountType] ?? [];
+        const tiers = await availableRewards(customer.accountType);
         const selectedTier = tiers.find(
-          (tier) => tier.points === points && tier.peso === amount,
+          (tier) => (body.rewardId ? String(tier._id) === body.rewardId : tier.source === "standard" && tier.kind === "cash") && tier.points === points && tier.amount === amount,
         );
         if (!selectedTier) {
           throw new VoucherRequestError("Invalid reward tier", 400);
@@ -78,8 +78,11 @@ export async function POST(req: Request) {
         const [voucher] = await Voucher.create(
           [
             {
+              rewardId: String(selectedTier._id),
+              rewardTitle: selectedTier.title,
+              rewardKind: selectedTier.kind,
               customerId: customer._id,
-              amount: selectedTier.peso,
+              amount: selectedTier.amount,
               points: selectedTier.points,
               pointsLocked: selectedTier.points,
               redeemed: false,
@@ -95,9 +98,9 @@ export async function POST(req: Request) {
             {
               customerId: customer._id,
               points: selectedTier.points,
-              amount: selectedTier.peso,
+              amount: selectedTier.amount,
               type: "locked",
-              description: `Locked points for voucher worth ₱${selectedTier.peso}`,
+              description: `Locked points for ${selectedTier.title}`,
               stationId: "Manual Redemption",
             },
           ],
