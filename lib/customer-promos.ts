@@ -24,8 +24,10 @@ export async function activeCustomerPromo() {
     .sort(PROMO_SORT)
     .select("title link rewardId endsAt updatedAt")
     .lean();
+  const upcoming = await Promo.findOne({ enabled: true, startsAt: { $gt: now }, $or: [{ endsAt: null }, { endsAt: { $gt: now } }] }).sort({ startsAt: 1 }).select("startsAt").lean();
   return NextResponse.json({
     ...promoDayWindow(now, promo?.endsAt),
+    nextStartsAt: upcoming?.startsAt?.toISOString() ?? null,
     promo: promo ? {
       id: String(promo._id), title: promo.title, rewardId: promo.rewardId || "", link: safePromoLink(promo.link || ""),
       imageUrl: `/api/promos/${promo._id}/image?v=${encodeURIComponent(promo.updatedAt.toISOString())}`,

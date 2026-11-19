@@ -23,6 +23,7 @@ export default function PromoPopup() {
     let disposed = false;
     let pending = false;
     let controller: AbortController | undefined;
+    let boundaryTimer: number | undefined;
 
     async function checkPromo() {
       if (
@@ -48,6 +49,11 @@ export default function PromoPopup() {
         });
         if (!response.ok) return;
         const data: PromoResponse = await response.json();
+        window.clearTimeout(boundaryTimer);
+        const nextStart = Date.parse(data.nextStartsAt || "") - Date.parse(data.serverTime);
+        if (Number.isFinite(nextStart) && nextStart > 0) {
+          boundaryTimer = window.setTimeout(checkPromo, Math.min(2_147_483_647, Math.max(50, nextStart - (performance.now() - started))));
+        }
         if (
           !data.promo ||
           !/^\d{4}-\d{2}-\d{2}$/.test(data.dayKey) ||
@@ -92,7 +98,7 @@ export default function PromoPopup() {
         artwork = null;
         setDisplay(promo);
       } catch {
-        // Offline, image, API or browser-storage failures never block the dashboard.
+        // Offline, image, API or browser-storage failures never block the app.
       } finally {
         if (artwork) URL.revokeObjectURL(artwork);
         window.clearTimeout(timeout);
@@ -101,13 +107,14 @@ export default function PromoPopup() {
     }
 
     void checkPromo();
-    const scheduleTimer = window.setInterval(checkPromo, 30_000);
+    const scheduleTimer = window.setInterval(checkPromo, 5_000);
     window.addEventListener("online", checkPromo);
     window.addEventListener("focus", checkPromo);
     document.addEventListener("visibilitychange", checkPromo);
     return () => {
       disposed = true;
       window.clearInterval(scheduleTimer);
+      window.clearTimeout(boundaryTimer);
       controller?.abort();
       window.removeEventListener("online", checkPromo);
       window.removeEventListener("focus", checkPromo);
@@ -181,7 +188,7 @@ export default function PromoPopup() {
                 onClick={close}
                 className="w-full rounded-lg px-4 py-2 text-sm text-gray-300 hover:bg-white/5 focus-visible:outline-2 focus-visible:outline-orange-400"
               >
-                Continue to dashboard
+                Continue
               </button>
             </div>
           </DialogPanel>

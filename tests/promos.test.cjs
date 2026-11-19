@@ -67,7 +67,7 @@ function fixture(authorized = true, failDB = false) {
       const queryRows = (query, many = false) => {
         let candidates = rows.filter((row) => matches(query, row));
         const chain = {
-          sort(sort) { assert.deepEqual(sort, rules.PROMO_SORT); candidates.sort((a, b) => b.priority - a.priority || a.createdAt - b.createdAt || a._id.localeCompare(b._id)); return chain; },
+          sort(sort) { if (sort.startsAt === 1) { candidates.sort((a, b) => a.startsAt - b.startsAt); return chain; } assert.deepEqual(sort, rules.PROMO_SORT); candidates.sort((a, b) => b.priority - a.priority || a.createdAt - b.createdAt || a._id.localeCompare(b._id)); return chain; },
           select() { return chain; },
           lean: async () => many ? candidates : candidates[0] ?? null,
           then: (resolve) => Promise.resolve(candidates[0] ?? null).then(resolve),
@@ -141,4 +141,12 @@ test("service worker never falls back to cached promo data or images", async () 
     assert.equal((await response).status, 503);
   }
   assert.ok(fetched);
+});
+
+test("returns nearest future start without an active promo", async () => {
+ const {api, rows}=fixture(); const future=rows[1];
+ rows.splice(0, rows.length, {...future, startsAt:new Date(+future.startsAt+60000)}, future, {...future, enabled:false, startsAt:new Date(+future.startsAt-1000)});
+ const body=await (await api.activeCustomerPromo()).json();
+ assert.equal(body.promo,null); assert.equal(body.nextStartsAt,future.startsAt.toISOString());
+ rows.length=0; assert.equal((await (await api.activeCustomerPromo()).json()).nextStartsAt,null);
 });

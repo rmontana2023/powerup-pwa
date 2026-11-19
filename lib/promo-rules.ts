@@ -14,6 +14,7 @@ export interface PromoResponse {
   dayKey: string;
   serverTime: string;
   validUntil: string;
+  nextStartsAt?: string | null;
 }
 
 export function activePromoFilter(now: Date) {

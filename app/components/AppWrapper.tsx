@@ -133,7 +133,7 @@ export default function AppWrapper({ children }: { children: React.ReactNode }) 
       {/* Your actual UI (NOT moved) */}
       {showSplash && <SplashScreen fadeOut={fadeOut} />}
       {!showSplash && children}
-      {!showSplash && pathname === "/dashboard" && <PromoPopup />}
+      {!showSplash && !/^\/(?:login|register|verify-account|reset-password|admin|offline)(?:\/|$)/.test(pathname) && pathname !== "/" && <PromoPopup />}
       <InstallPWAButton />
     </>
   );
