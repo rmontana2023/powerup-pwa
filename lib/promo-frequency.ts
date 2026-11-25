@@ -1,6 +1,6 @@
 const DATABASE = "powerup-promo-frequency";
 const STORE = "impressions";
-const promoKey = (promoId: string) => `promo:${promoId}:last-shown-day`;
+const promoKey = (promoId: string) => `promo:${promoId}:last-shown-at`;
 
 function openDatabase(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
@@ -14,7 +14,14 @@ function openDatabase(): Promise<IDBDatabase> {
 
 // A read/write transaction serializes claims across tabs. The key is deliberately
 // shared across accounts for each promo on this browser/device and survives logout.
-async function dayOperation(promoId: string, dayKey: string, claim: boolean): Promise<boolean> {
+export const PROMO_INTERVAL_MS = 60 * 60 * 1000;
+
+export function isWithinPromoHour(lastShown: unknown, serverTime: number): boolean {
+  return typeof lastShown === "number" && Number.isFinite(lastShown) && serverTime - lastShown < PROMO_INTERVAL_MS;
+}
+
+async function hourOperation(promoId: string, serverTime: number, claim: boolean): Promise<boolean> {
+  if (!Number.isFinite(serverTime)) throw new Error("Invalid promo server time.");
   const db = await openDatabase();
   try {
     return await new Promise<boolean>((resolve, reject) => {
@@ -23,9 +30,9 @@ async function dayOperation(promoId: string, dayKey: string, claim: boolean): Pr
       const request = store.get(promoKey(promoId));
       let result = false;
       request.onsuccess = () => {
-        const seen = typeof request.result === "string" && request.result >= dayKey;
+        const seen = isWithinPromoHour(request.result, serverTime);
         result = claim ? !seen : seen;
-        if (claim && !seen) store.put(dayKey, promoKey(promoId));
+        if (claim && !seen) store.put(serverTime, promoKey(promoId));
       };
       tx.oncomplete = () => resolve(result);
       tx.onerror = () => reject(tx.error);
@@ -34,5 +41,5 @@ async function dayOperation(promoId: string, dayKey: string, claim: boolean): Pr
   } finally { db.close(); }
 }
 
-export const hasSeenPromoDay = (promoId: string, dayKey: string) => dayOperation(promoId, dayKey, false);
-export const claimPromoDay = (promoId: string, dayKey: string) => dayOperation(promoId, dayKey, true);
+export const hasSeenPromoHour = (promoId: string, serverTime: number) => hourOperation(promoId, serverTime, false);
+export const claimPromoHour = (promoId: string, serverTime: number) => hourOperation(promoId, serverTime, true);

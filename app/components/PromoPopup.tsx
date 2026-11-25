@@ -4,7 +4,7 @@ import { isAppOnline, OFFLINE_TEST_BYPASS } from "@/lib/connectivity";
 import { useEffect, useRef, useState } from "react";
 import { Dialog, DialogPanel, DialogTitle } from "@headlessui/react";
 import { X } from "lucide-react";
-import { claimPromoDay, hasSeenPromoDay } from "@/lib/promo-frequency";
+import { claimPromoHour, hasSeenPromoHour } from "@/lib/promo-frequency";
 import { CustomerPromo, PromoResponse, safePromoLink } from "@/lib/promo-rules";
 
 type DisplayPromo = CustomerPromo & { artwork: string; deadline: number };
@@ -54,10 +54,11 @@ export default function PromoPopup() {
         if (Number.isFinite(nextStart) && nextStart > 0) {
           boundaryTimer = window.setTimeout(checkPromo, Math.min(2_147_483_647, Math.max(50, nextStart - (performance.now() - started))));
         }
+        const serverTime = Date.parse(data.serverTime);
         if (
           !data.promo ||
-          !/^\d{4}-\d{2}-\d{2}$/.test(data.dayKey) ||
-          (await hasSeenPromoDay(data.promo.id, data.dayKey))
+          !Number.isFinite(serverTime) ||
+          (await hasSeenPromoHour(data.promo.id, serverTime))
         )
           return;
         const duration = Date.parse(data.validUntil) - Date.parse(data.serverTime);
@@ -91,7 +92,7 @@ export default function PromoPopup() {
           return;
         if (document.querySelector('[role="dialog"], [aria-modal="true"], .swal2-container'))
           return;
-        if (!(await claimPromoDay(data.promo.id, data.dayKey))) return;
+        if (!(await claimPromoHour(data.promo.id, serverTime + (performance.now() - started)))) return;
         if (disposed || request.signal.aborted || performance.now() >= deadline) return;
         const promo = { ...data.promo, link: safePromoLink(data.promo.link), artwork, deadline };
         current.current = promo;

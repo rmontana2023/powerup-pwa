@@ -5,6 +5,7 @@ interface VoucherTier {
   _id?: string;
   title?: string;
   kind?: "cash" | "item";
+  source?: "standard" | "promo";
   points: number;
   peso: number;
 }
@@ -16,7 +17,11 @@ interface VoucherListProps {
 }
 
 export default function VoucherList({ tiers, onRedeem, totalPoints }: VoucherListProps) {
-  console.log("VoucherList totalPoints:", totalPoints);
+  const indexedTiers = tiers.map((tier, idx) => ({ tier, idx }));
+  const sections = [
+    { title: "Cash Rewards", entries: indexedTiers.filter(({ tier }) => tier.source !== "promo") },
+    { title: "Promo Rewards", entries: indexedTiers.filter(({ tier }) => tier.source === "promo") },
+  ];
   const [linkedId, setLinkedId] = useState("");
   const scrolled = useRef(false);
   useEffect(() => { setLinkedId(new URLSearchParams(window.location.search).get("reward") || ""); }, []);
@@ -47,7 +52,10 @@ export default function VoucherList({ tiers, onRedeem, totalPoints }: VoucherLis
 
       <div className="space-y-4">
         {linkedId && tiers.length > 0 && !tiers.some(tier => tier._id === linkedId) && <p className="text-sm text-gray-400">This promo reward is not currently available for your account.</p>}
-        {tiers.map((tier, idx) => {
+        {sections.filter(section => section.entries.length > 0).map(section => (
+          <section key={section.title} className="space-y-4">
+            <h4 className="pt-4 text-base font-semibold text-[var(--text-accent)]">{section.title}</h4>
+            {section.entries.map(({ tier, idx }) => {
           const canRedeem = totalPoints >= tier.points;
           const isLoading = loadingIndex === idx;
 
@@ -104,7 +112,9 @@ export default function VoucherList({ tiers, onRedeem, totalPoints }: VoucherLis
               </button>
             </div>
           );
-        })}
+            })}
+          </section>
+        ))}
       </div>
     </div>
   );
