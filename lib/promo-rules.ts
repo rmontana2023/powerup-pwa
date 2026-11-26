@@ -1,5 +1,5 @@
 export const PROMO_TIMEZONE = "Asia/Manila";
-export const PROMO_SORT = { priority: -1, createdAt: 1, _id: 1 } as const;
+export const PROMO_SORT = { priority: 1, createdAt: 1, _id: 1 } as const;
 
 export interface CustomerPromo {
   id: string;
@@ -45,4 +45,9 @@ export function safePromoLink(value: string) {
     const url = new URL(value);
     return ["https:", "http:"].includes(url.protocol) && !url.username && !url.password ? url.href : "";
   } catch { return ""; }
+}
+
+export const normalizePromoPriority = (value: number) => Number.isInteger(value) && value >= 1 && value <= 100 ? value : 100;
+export function comparePromoPriority(a: { priority: number; createdAt: Date; _id: unknown }, b: { priority: number; createdAt: Date; _id: unknown }) {
+ return normalizePromoPriority(a.priority) - normalizePromoPriority(b.priority) || new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime() || String(a._id).localeCompare(String(b._id));
 }

@@ -216,6 +216,10 @@ export default function DashboardPage() {
 
   if (!user) return null;
   const availablePoints = Math.max(0, totalPoints - lockedPoints);
+  const rewardGroups = [
+    { title: "Cash Rewards", tiers: userTiers.filter(tier => tier.source !== "promo") },
+    { title: "Promo Rewards", tiers: userTiers.filter(tier => tier.source === "promo") },
+  ].filter(group => group.tiers.length > 0);
   const minimumRedeemPoints = userTiers.length ? Math.min(...userTiers.map((tier) => tier.points)) : 0;
   const canRedeem = userTiers.length > 0 && availablePoints >= minimumRedeemPoints;
   const pointsNeeded = Math.max(0, minimumRedeemPoints - availablePoints);
@@ -396,7 +400,10 @@ export default function DashboardPage() {
         <div className="w-full max-w-md mb-8">
           <h2 className="text-lg font-bold mb-4">Rewards</h2>
           <div className="bg-[var(--card-bg)] rounded-3xl shadow-md border border-[var(--border-color)] p-5 flex flex-col">
-            {userTiers.map((tier, idx) => (
+            {rewardGroups.map(group => (
+              <section key={group.title} className="mb-4 space-y-1">
+                <h3 className="text-sm font-bold text-[var(--text-accent)] mb-2">{group.title}</h3>
+                {group.tiers.map((tier, idx) => (
               <p
                 key={idx}
                 className={`text-base font-semibold ${
@@ -405,6 +412,8 @@ export default function DashboardPage() {
               >
                 {tier.points} Points = {tier.title || `PHP ${tier.peso.toFixed(2)}`}
               </p>
+                ))}
+              </section>
             ))}
             <div className="flex flex-col items-end mt-4 gap-2">
               <button
@@ -414,7 +423,7 @@ export default function DashboardPage() {
                 aria-disabled={!canRedeem}
                 className={`px-6 py-2 rounded-lg transition-all font-semibold ${
                   canRedeem
-                    ? "bg-[var(--accent)] hover:bg-[var(--accent-dark)] text-white"
+                    ? "bg-[var(--accent)] hover:bg-[var(--accent-dark)] text-black"
                     : "bg-gray-300 text-gray-500 cursor-not-allowed opacity-70"
                 }`}
               >
@@ -443,19 +452,24 @@ export default function DashboardPage() {
               <h3 className="text-lg font-semibold text-gray-800 mb-4">Select Redeem Amount</h3>
 
               <div className="space-y-3">
-                {userTiers.map((tier, idx) => (
+                {rewardGroups.map(group => (
+                  <section key={group.title} className="space-y-3">
+                    <h4 className="text-sm font-semibold text-gray-800">{group.title}</h4>
+                    {group.tiers.map((tier, idx) => (
                   <button
                     key={idx}
                     onClick={() => handleRedeemSelect(tier)}
                     disabled={availablePoints < tier.points || loadingVoucher}
                     className={`w-full py-2 rounded-lg font-semibold transition-all ${
                       availablePoints >= tier.points
-                        ? "bg-orange-500 hover:bg-orange-600 text-white"
+                        ? "bg-orange-500 hover:bg-orange-600 text-black"
                         : "bg-gray-200 text-gray-500 cursor-not-allowed"
                     }`}
                   >
                     {tier.title || `PHP ${tier.peso}`} — {tier.points} Points
                   </button>
+                    ))}
+                  </section>
                 ))}
               </div>
             </div>
@@ -563,7 +577,7 @@ export default function DashboardPage() {
                       console.error("Error downloading QR:", error);
                     }
                   }}
-                  className="bg-orange-500 hover:bg-orange-600 text-white text-sm px-4 py-2 rounded-lg shadow transition"
+                  className="bg-orange-500 hover:bg-orange-600 text-black text-sm px-4 py-2 rounded-lg shadow transition"
                 >
                   Download
                 </button>

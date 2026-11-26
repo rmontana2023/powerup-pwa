@@ -67,7 +67,7 @@ function fixture(authorized = true, failDB = false) {
       const queryRows = (query, many = false) => {
         let candidates = rows.filter((row) => matches(query, row));
         const chain = {
-          sort(sort) { if (sort.startsAt === 1) { candidates.sort((a, b) => a.startsAt - b.startsAt); return chain; } assert.deepEqual(sort, rules.PROMO_SORT); candidates.sort((a, b) => b.priority - a.priority || a.createdAt - b.createdAt || a._id.localeCompare(b._id)); return chain; },
+          sort(sort) { if (sort.startsAt === 1) { candidates.sort((a, b) => a.startsAt - b.startsAt); return chain; } assert.deepEqual(sort, rules.PROMO_SORT); candidates.sort((a, b) => a.priority - b.priority || a.createdAt - b.createdAt || a._id.localeCompare(b._id)); return chain; },
           select() { return chain; },
           lean: async () => many ? candidates : candidates[0] ?? null,
           then: (resolve) => Promise.resolve(candidates[0] ?? null).then(resolve),
@@ -149,4 +149,12 @@ test("returns nearest future start without an active promo", async () => {
  const body=await (await api.activeCustomerPromo()).json();
  assert.equal(body.promo,null); assert.equal(body.nextStartsAt,future.startsAt.toISOString());
  rows.length=0; assert.equal((await (await api.activeCustomerPromo()).json()).nextStartsAt,null);
+});
+
+test("priority 1 wins and legacy out-of-range priorities come last", async()=>{
+ const {api,rows}=fixture(); rows[5].priority=1; rows[4].priority=0;
+ const response=await (await api.activeCustomerPromo()).json();
+ assert.equal(response.promo.id,rows[5]._id);
+ const list=await (await api.listCustomerPromos()).json();
+ assert.deepEqual(list.promos.map(p=>p.id),[rows[5]._id,rows[3]._id,rows[4]._id]);
 });

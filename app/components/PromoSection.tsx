@@ -143,7 +143,7 @@ export default function PromoSection() {
                 <button
                   onClick={() => setSelectedId(promo.id)}
                   aria-label={`View mechanics for ${promo.title}`}
-                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--accent)] px-4 py-3 text-sm font-semibold text-white hover:bg-[var(--accent-dark)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-400"
+                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--accent)] px-4 py-3 text-sm font-semibold text-black hover:text-black hover:bg-[var(--accent-dark)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-400"
                 >
                   View full mechanics
                   <ArrowUpRight size={16} />
@@ -188,7 +188,7 @@ export default function PromoSection() {
                 {selected.rewardId && /^[a-f\d]{24}$/i.test(selected.rewardId) && (
                   <a
                     href={`/rewards?reward=${selected.rewardId}#rewards`}
-                    className="block rounded-xl bg-orange-500 px-4 py-3 text-center font-semibold text-black"
+                    className="block rounded-xl bg-orange-500 px-4 py-3 text-center font-semibold text-black hover:text-black"
                   >
                     View reward
                   </a>
@@ -198,7 +198,7 @@ export default function PromoSection() {
                     href={safePromoLink(selected.link)}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center justify-center gap-2 rounded-xl bg-orange-500 px-4 py-3 text-sm font-semibold text-white"
+                    className="flex items-center justify-center gap-2 rounded-xl bg-orange-500 px-4 py-3 text-sm font-semibold text-black hover:text-black"
                   >
                     Visit promo link
                     <ArrowUpRight size={16} />

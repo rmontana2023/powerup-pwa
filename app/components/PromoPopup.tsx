@@ -168,7 +168,7 @@ export default function PromoPopup() {
                 <a
                   href={`/rewards?reward=${display.rewardId}#rewards`}
                   onClick={close}
-                  className="block rounded-xl bg-orange-500 px-5 py-3 text-center font-semibold text-black"
+                  className="block rounded-xl bg-orange-500 px-5 py-3 text-center font-semibold text-black hover:text-black"
                 >
                   View reward
                 </a>
@@ -179,7 +179,7 @@ export default function PromoPopup() {
                   target="_blank"
                   rel="noopener noreferrer"
                   onClick={close}
-                  className="block rounded-xl bg-orange-500 px-5 py-3 text-center font-semibold text-white hover:bg-orange-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-400"
+                  className="block rounded-xl bg-orange-500 px-5 py-3 text-center font-semibold text-black hover:text-black hover:bg-orange-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-400"
                 >
                   Learn more
                 </a>

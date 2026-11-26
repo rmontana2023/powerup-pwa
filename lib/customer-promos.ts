@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getVerifiedCustomer } from "@/lib/server-auth";
 import { getPromoModel } from "@/lib/promo-db";
-import { activePromoFilter, promoDayWindow, PROMO_SORT, safePromoLink } from "@/lib/promo-rules";
+import { comparePromoPriority, activePromoFilter, promoDayWindow, PROMO_SORT, safePromoLink } from "@/lib/promo-rules";
 
 const headers = { "Cache-Control": "private, no-store, max-age=0", Vary: "Cookie" };
 
@@ -20,10 +20,11 @@ export async function customerPromoRequest(action: () => Promise<Response>) {
 export async function activeCustomerPromo() {
   const Promo = await getPromoModel();
   const now = new Date();
-  const promo = await Promo.findOne(activePromoFilter(now))
+  const eligible = await Promo.find(activePromoFilter(now))
     .sort(PROMO_SORT)
-    .select("title link rewardId endsAt updatedAt")
+    .select("title link rewardId endsAt updatedAt priority createdAt")
     .lean();
+  const promo = eligible.sort(comparePromoPriority)[0];
   const upcoming = await Promo.findOne({ enabled: true, startsAt: { $gt: now }, $or: [{ endsAt: null }, { endsAt: { $gt: now } }] }).sort({ startsAt: 1 }).select("startsAt").lean();
   return NextResponse.json({
     ...promoDayWindow(now, promo?.endsAt),
@@ -40,10 +41,10 @@ export async function listCustomerPromos() {
   const now = new Date();
   const promos = await Promo.find(activePromoFilter(now))
     .sort(PROMO_SORT)
-    .select("title link mechanics rewardId startsAt endsAt updatedAt")
+    .select("title link mechanics rewardId startsAt endsAt updatedAt priority createdAt")
     .lean();
   return NextResponse.json({
-    promos: promos.map((promo) => ({
+    promos: promos.sort(comparePromoPriority).map((promo) => ({
       id: String(promo._id), title: promo.title, rewardId: promo.rewardId || "",
       mechanics: promo.mechanics || "", link: safePromoLink(promo.link || ""),
       startsAt: promo.startsAt?.toISOString() ?? null,
