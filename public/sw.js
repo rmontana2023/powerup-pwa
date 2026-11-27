@@ -1,5 +1,5 @@
 // Temporary testing bypass. Set to false to restore service-worker caching.
-const OFFLINE_TEST_BYPASS = true;
+const OFFLINE_TEST_BYPASS = false;
 const CACHE_VERSION = "powerup-v2";
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 const PAGE_CACHE = `${CACHE_VERSION}-pages`;
