@@ -1,15 +1,11 @@
+// Temporary testing bypass. Set to false to restore service-worker caching.
+const OFFLINE_TEST_BYPASS = true;
 const CACHE_VERSION = "powerup-v2";
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 const PAGE_CACHE = `${CACHE_VERSION}-pages`;
 const API_CACHE = `${CACHE_VERSION}-api`;
 
-const APP_SHELL = [
-  "/",
-  "/offline",
-  "/manifest.json",
-  "/icons/app_icon.png",
-  "/favicon.ico",
-];
+const APP_SHELL = ["/", "/offline", "/manifest.json", "/icons/app_icon.png", "/favicon.ico"];
 
 self.addEventListener("install", (event) => {
   console.log("[SW] Installing...");
@@ -28,7 +24,7 @@ self.addEventListener("install", (event) => {
       }
 
       self.skipWaiting();
-    })()
+    })(),
   );
 });
 
@@ -45,15 +41,17 @@ self.addEventListener("activate", (event) => {
             console.log("[SW] Removing old cache:", key);
             return caches.delete(key);
           }
-        })
+        }),
       );
 
       await self.clients.claim();
-    })()
+    })(),
   );
 });
 
 self.addEventListener("fetch", (event) => {
+  // Let requests use the network directly while testing.
+  if (OFFLINE_TEST_BYPASS) return;
   const request = event.request;
 
   if (request.method !== "GET") return;
@@ -64,10 +62,7 @@ self.addEventListener("fetch", (event) => {
   // Ignore browser extensions
   //---------------------------------------------------
 
-  if (
-    url.protocol !== "http:" &&
-    url.protocol !== "https:"
-  ) {
+  if (url.protocol !== "http:" && url.protocol !== "https:") {
     return;
   }
 
@@ -75,6 +70,14 @@ self.addEventListener("fetch", (event) => {
   // API (Network First)
   //---------------------------------------------------
 
+  // Promos are time-sensitive and authenticated. Never serve cached offers/images.
+  if (url.origin === self.location.origin && (url.pathname.startsWith("/api/promos/") || url.pathname === "/api/rewards/catalog")) {
+    event.respondWith(fetch(request, { cache: "no-store" }).catch(() => new Response(null, {
+      status: 503,
+      headers: { "Cache-Control": "no-store" },
+    })));
+    return;
+  }
   if (url.pathname.startsWith("/api")) {
     event.respondWith(networkFirst(request, API_CACHE));
     return;
@@ -120,44 +123,43 @@ async function pageStrategy(request) {
 
   if (response) return response;
 
+  const dashboard = await cache.match("/dashboard");
 
-const dashboard = await cache.match("/dashboard");
+  if (dashboard) return dashboard;
 
-if (dashboard) return dashboard;
-
-return caches.match("/");
+  return caches.match("/");
 }
 
-async function networkFirst(request, cacheName) {
-  const cache = await caches.open(cacheName);
+// async function networkFirst(request, cacheName) {
+//   const cache = await caches.open(cacheName);
 
-  try {
-    const response = await fetch(request);
+//   try {
+//     const response = await fetch(request);
 
-    if (response.ok) {
-      cache.put(request, response.clone());
-    }
+//     if (response.ok) {
+//       cache.put(request, response.clone());
+//     }
 
-    return response;
-  } catch {
-    const cached = await cache.match(request);
+//     return response;
+//   } catch {
+//     const cached = await cache.match(request);
 
-    if (cached) return cached;
+//     if (cached) return cached;
 
-    return new Response(
-      JSON.stringify({
-        offline: true,
-        message: "No internet connection",
-      }),
-      {
-        status: 503,
-        headers: {
-          "Content-Type": "application/json",
-        },
-      }
-    );
-  }
-}
+//     return new Response(
+//       JSON.stringify({
+//         offline: true,
+//         message: "No internet connection",
+//       }),
+//       {
+//         status: 503,
+//         headers: {
+//           "Content-Type": "application/json",
+//         },
+//       }
+//     );
+//   }
+// }
 
 async function cacheFirst(request) {
   const cache = await caches.open(STATIC_CACHE);
@@ -171,10 +173,7 @@ async function cacheFirst(request) {
   try {
     const response = await fetch(request);
 
-    if (
-      response.ok &&
-      request.url.startsWith(self.location.origin)
-    ) {
+    if (response.ok && request.url.startsWith(self.location.origin)) {
       cache.put(request, response.clone());
     }
 

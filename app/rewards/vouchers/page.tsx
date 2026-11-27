@@ -19,6 +19,8 @@ interface User {
 }
 
 interface Voucher {
+  rewardTitle?: string;
+  rewardKind?: string;
   _id: string;
   code: string;
   amount: number;
@@ -131,7 +133,7 @@ export default function MyVouchersPage() {
     ctx.font = "bold 88px Arial";
 
     ctx.fillText(
-      `₱${selectedVoucher.amount} OFF`,
+      selectedVoucher.rewardTitle || `₱${selectedVoucher.amount} OFF`,
       canvas.width / 2,
       980
     );
@@ -270,7 +272,7 @@ export default function MyVouchersPage() {
                 }`}
               >
                 <div>
-                  <p className="text-base font-semibold text-white">₱{voucher.amount} OFF</p>
+                  <p className="text-base font-semibold text-white">{voucher.rewardTitle || `PHP ${voucher.amount} OFF`}</p>
                   <p className="text-xs text-gray-400 mb-1">
                     Code: <span className="text-[#e66a00]">{voucher.code}</span>
                   </p>
@@ -351,7 +353,7 @@ export default function MyVouchersPage() {
 
               {/* Voucher Details */}
               <p className="text-3xl font-bold text-orange-500 mb-1">
-                ₱{selectedVoucher.amount} OFF
+                {selectedVoucher.rewardTitle || `PHP ${selectedVoucher.amount} OFF`}
               </p>
               <p className="text-lg font-semibold text-white tracking-widest mb-2">E-Voucher</p>
               <p className="text-base font-semibold text-orange-500 mb-3">
@@ -397,7 +399,7 @@ export default function MyVouchersPage() {
                     try {
                       const shareData = {
                         title: "PowerUp E-Voucher",
-                        text: `Here’s my PowerUp voucher worth ₱${selectedVoucher.amount}. Code: ${selectedVoucher.code}`,
+                        text: `${selectedVoucher.rewardTitle || `PHP ${selectedVoucher.amount} voucher`}. Code: ${selectedVoucher.code}`,
                         url: window.location.origin,
                       };
                       if (navigator.share) {

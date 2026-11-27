@@ -1,4 +1,5 @@
 "use client";
+import { isAppOnline } from "@/lib/connectivity";
 import React from "react";
 import { useEffect, useState, useRef } from "react";
 import { QRCodeSVG } from "@/app/components/ScannerQRCode";
@@ -9,8 +10,10 @@ import { FaMotorcycle, FaCar } from "react-icons/fa";
 import Image from "next/image";
 import newlogo from "../../public/assets/logo/powerup-new-logo.png";
 import LayoutWithNav from "../components/LayoutWithNav";
+import PromoSection from "../components/PromoSection";
 import { Copy } from "lucide-react";
-import { REWARD_TIERS } from "@/lib/reward-tiers";
+import { RewardTier } from "@/lib/reward-tiers";
+import { useRewardCatalog } from "../components/useRewardCatalog";
 interface User {
   _id: string;
   name: string;
@@ -29,6 +32,7 @@ interface PointsConversion {
 }
 
 interface Voucher {
+  rewardTitle?: string;
   code: string;
   amount: number;
   expiresAt: Date;
@@ -37,6 +41,7 @@ interface Voucher {
 export default function DashboardPage() {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
+  const { tiers: userTiers, rewardsError } = useRewardCatalog(user?.accountType);
   const [loading, setLoading] = useState(true);
   // const [sidebarOpen, setSidebarOpen] = useState(false);
 
@@ -110,9 +115,9 @@ export default function DashboardPage() {
 
   useEffect(() => {
     // Set initial status after component mounts
-    setOfflineMode(!navigator.onLine);
+    setOfflineMode(!isAppOnline());
 
-    const offline = () => setOfflineMode(true);
+    const offline = () => setOfflineMode(!isAppOnline());
     const online = () => setOfflineMode(false);
 
     window.addEventListener("offline", offline);
@@ -210,10 +215,13 @@ export default function DashboardPage() {
   }, [qrOpen]);
 
   if (!user) return null;
-  const userTiers = REWARD_TIERS[user.accountType || "ordinary"];
   const availablePoints = Math.max(0, totalPoints - lockedPoints);
-  const minimumRedeemPoints = Math.min(...userTiers.map((tier) => tier.points));
-  const canRedeem = availablePoints >= minimumRedeemPoints;
+  const rewardGroups = [
+    { title: "Cash Rewards", tiers: userTiers.filter(tier => tier.source !== "promo") },
+    { title: "Promo Rewards", tiers: userTiers.filter(tier => tier.source === "promo") },
+  ].filter(group => group.tiers.length > 0);
+  const minimumRedeemPoints = userTiers.length ? Math.min(...userTiers.map((tier) => tier.points)) : 0;
+  const canRedeem = userTiers.length > 0 && availablePoints >= minimumRedeemPoints;
   const pointsNeeded = Math.max(0, minimumRedeemPoints - availablePoints);
 
   const startDrag = (e: React.PointerEvent) => {
@@ -242,7 +250,7 @@ export default function DashboardPage() {
     if (!canRedeem) return;
     setShowSlideDialog(true);
   };
-  const revealVoucher = async (selectedTier?: { points: number; peso: number }) => {
+  const revealVoucher = async (selectedTier?: RewardTier) => {
     if (!selectedTier || loadingVoucher) return;
 
     setLoadingVoucher(true);
@@ -252,6 +260,7 @@ export default function DashboardPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           customerId: user._id,
+          rewardId: selectedTier._id,
           amount: selectedTier.peso,
           points: selectedTier.points,
         }),
@@ -273,7 +282,7 @@ export default function DashboardPage() {
     }
   };
 
-  const handleRedeemSelect = (tier: { points: number; peso: number }) => {
+  const handleRedeemSelect = (tier: RewardTier) => {
     if (availablePoints < tier.points) {
       alert("Insufficient points");
       return;
@@ -391,15 +400,20 @@ export default function DashboardPage() {
         <div className="w-full max-w-md mb-8">
           <h2 className="text-lg font-bold mb-4">Rewards</h2>
           <div className="bg-[var(--card-bg)] rounded-3xl shadow-md border border-[var(--border-color)] p-5 flex flex-col">
-            {userTiers.map((tier, idx) => (
+            {rewardGroups.map(group => (
+              <section key={group.title} className="mb-4 space-y-1">
+                <h3 className="text-sm font-bold text-[var(--text-accent)] mb-2">{group.title}</h3>
+                {group.tiers.map((tier, idx) => (
               <p
                 key={idx}
                 className={`text-base font-semibold ${
                   availablePoints >= tier.points ? "" : "opacity-50"
                 }`}
               >
-                {tier.points} Points = ₱{tier.peso.toFixed(2)}
+                {tier.points} Points = {tier.title || `PHP ${tier.peso.toFixed(2)}`}
               </p>
+                ))}
+              </section>
             ))}
             <div className="flex flex-col items-end mt-4 gap-2">
               <button
@@ -409,7 +423,7 @@ export default function DashboardPage() {
                 aria-disabled={!canRedeem}
                 className={`px-6 py-2 rounded-lg transition-all font-semibold ${
                   canRedeem
-                    ? "bg-[var(--accent)] hover:bg-[var(--accent-dark)] text-white"
+                    ? "bg-[var(--accent)] hover:bg-[var(--accent-dark)] text-black"
                     : "bg-gray-300 text-gray-500 cursor-not-allowed opacity-70"
                 }`}
               >
@@ -424,6 +438,9 @@ export default function DashboardPage() {
           </div>
         </div>
 
+        {rewardsError && <p role="alert" className="mb-4 text-sm text-red-400">{rewardsError}</p>}
+        <PromoSection />
+
         {/* Redeem Selection Modal */}
         {showSlideDialog && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
@@ -435,19 +452,24 @@ export default function DashboardPage() {
               <h3 className="text-lg font-semibold text-gray-800 mb-4">Select Redeem Amount</h3>
 
               <div className="space-y-3">
-                {userTiers.map((tier, idx) => (
+                {rewardGroups.map(group => (
+                  <section key={group.title} className="space-y-3">
+                    <h4 className="text-sm font-semibold text-gray-800">{group.title}</h4>
+                    {group.tiers.map((tier, idx) => (
                   <button
                     key={idx}
                     onClick={() => handleRedeemSelect(tier)}
                     disabled={availablePoints < tier.points || loadingVoucher}
                     className={`w-full py-2 rounded-lg font-semibold transition-all ${
                       availablePoints >= tier.points
-                        ? "bg-orange-500 hover:bg-orange-600 text-white"
+                        ? "bg-orange-500 hover:bg-orange-600 text-black"
                         : "bg-gray-200 text-gray-500 cursor-not-allowed"
                     }`}
                   >
-                    ₱{tier.peso} — {tier.points} Points
+                    {tier.title || `PHP ${tier.peso}`} — {tier.points} Points
                   </button>
+                    ))}
+                  </section>
                 ))}
               </div>
             </div>
@@ -493,7 +515,7 @@ export default function DashboardPage() {
 
               {/* Voucher Amount */}
               <p className="text-3xl font-bold text-orange-500 mb-1">
-                ₱{voucher.amount ? voucher.amount : "N/A"} OFF
+                {voucher.rewardTitle || `PHP ${voucher.amount} OFF`}
               </p>
 
               {/* “E-Voucher” Label */}
@@ -555,7 +577,7 @@ export default function DashboardPage() {
                       console.error("Error downloading QR:", error);
                     }
                   }}
-                  className="bg-orange-500 hover:bg-orange-600 text-white text-sm px-4 py-2 rounded-lg shadow transition"
+                  className="bg-orange-500 hover:bg-orange-600 text-black text-sm px-4 py-2 rounded-lg shadow transition"
                 >
                   Download
                 </button>
@@ -565,7 +587,7 @@ export default function DashboardPage() {
                     try {
                       const shareData = {
                         title: "PowerUp E-Voucher",
-                        text: `Here’s my PowerUp voucher worth ₱${voucher.amount}. Code: ${voucher.code}`,
+                        text: `${voucher.rewardTitle || `PHP ${voucher.amount} voucher`}. Code: ${voucher.code}`,
                         url: window.location.origin,
                       };
                       if (navigator.share) {

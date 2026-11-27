@@ -1,4 +1,8 @@
 export interface RewardTier {
+  _id?: string;
+  title?: string;
+  kind?: "cash" | "item";
+  source?: "standard" | "promo";
   points: number;
   peso: number;
 }

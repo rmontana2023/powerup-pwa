@@ -69,6 +69,7 @@
 }
 
 /* 🔤 Base styles */
+@layer base {
 a {
   color: var(--accent);
   text-decoration: none;
@@ -76,6 +77,8 @@ a {
 }
 a:hover {
   color: var(--accent-dark);
+}
+
 }
 
 button {

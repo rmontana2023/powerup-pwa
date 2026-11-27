@@ -1,26 +1,42 @@
 "use client";
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 
 interface VoucherTier {
+  _id?: string;
+  title?: string;
+  kind?: "cash" | "item";
+  source?: "standard" | "promo";
   points: number;
   peso: number;
 }
 
 interface VoucherListProps {
   tiers: VoucherTier[];
-  onRedeem: (points: number, peso: number) => Promise<void> | void;
+  onRedeem: (points: number, peso: number, reward?: VoucherTier) => Promise<void> | void;
   totalPoints: number;
 }
 
 export default function VoucherList({ tiers, onRedeem, totalPoints }: VoucherListProps) {
-  console.log("VoucherList totalPoints:", totalPoints);
+  const indexedTiers = tiers.map((tier, idx) => ({ tier, idx }));
+  const sections = [
+    { title: "Cash Rewards", entries: indexedTiers.filter(({ tier }) => tier.source !== "promo") },
+    { title: "Promo Rewards", entries: indexedTiers.filter(({ tier }) => tier.source === "promo") },
+  ];
+  const [linkedId, setLinkedId] = useState("");
+  const scrolled = useRef(false);
+  useEffect(() => { setLinkedId(new URLSearchParams(window.location.search).get("reward") || ""); }, []);
+  useEffect(() => {
+    if (!linkedId || scrolled.current || !tiers.some(tier => tier._id === linkedId)) return;
+    document.getElementById(`reward-${linkedId}`)?.scrollIntoView({ block: "center", behavior: "smooth" });
+    scrolled.current = true;
+  }, [linkedId, tiers]);
   const [loadingIndex, setLoadingIndex] = useState<number | null>(null);
 
   const handleRedeemClick = async (idx: number, points: number, peso: number) => {
     setLoadingIndex(idx);
 
     try {
-      await onRedeem(points, peso); // call parent handler
+      await onRedeem(points, peso, tiers[idx]); // call parent handler
     } catch (error) {
       console.error("Redeem error:", error);
     } finally {
@@ -29,23 +45,28 @@ export default function VoucherList({ tiers, onRedeem, totalPoints }: VoucherLis
   };
 
   return (
-    <div className="w-full max-w-md mt-8">
+    <div id="rewards" className="w-full max-w-md mt-8">
       <h3 className="text-lg font-semibold mb-4 text-center text-[var(--text-accent)]">
-        Redeemable Vouchers
+        Redeemable Rewards
       </h3>
 
       <div className="space-y-4">
-        {tiers.map((tier, idx) => {
+        {linkedId && tiers.length > 0 && !tiers.some(tier => tier._id === linkedId) && <p className="text-sm text-gray-400">This promo reward is not currently available for your account.</p>}
+        {sections.filter(section => section.entries.length > 0).map(section => (
+          <section key={section.title} className="space-y-4">
+            <h4 className="pt-4 text-base font-semibold text-[var(--text-accent)]">{section.title}</h4>
+            {section.entries.map(({ tier, idx }) => {
           const canRedeem = totalPoints >= tier.points;
           const isLoading = loadingIndex === idx;
 
           return (
             <div
-              key={idx}
+              key={tier._id || idx}
+              id={`reward-${tier._id}`}
               className={`relative flex flex-col sm:flex-row sm:items-center justify-between 
                 bg-white/10 backdrop-blur-lg border border-white/10 text-white p-4 rounded-2xl shadow-[0_3px_10px_rgba(0,0,0,0.3)]
                 transition-transform ${
-                  canRedeem ? "hover:scale-[1.02]" : "opacity-40 cursor-not-allowed"
+                  tier._id === linkedId ? "ring-2 ring-orange-500" : canRedeem ? "hover:scale-[1.02]" : "opacity-40 cursor-not-allowed"
                 }`}
             >
               {/* Left Section */}
@@ -72,7 +93,7 @@ export default function VoucherList({ tiers, onRedeem, totalPoints }: VoucherLis
                     </svg>
                     <span className="text-sm font-semibold tracking-wide">REWARDS POINTS</span>
                   </div>
-                  <p className="text-xs text-gray-300 mt-1">₱{tier.peso} Voucher</p>
+                  <p className="text-xs text-gray-300 mt-1">{tier.title || `PHP ${tier.peso} Voucher`}</p>
                 </div>
               </div>
 
@@ -91,7 +112,9 @@ export default function VoucherList({ tiers, onRedeem, totalPoints }: VoucherLis
               </button>
             </div>
           );
-        })}
+            })}
+          </section>
+        ))}
       </div>
     </div>
   );

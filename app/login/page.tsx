@@ -1,4 +1,5 @@
 "use client";
+import { isAppOnline } from "@/lib/connectivity";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
@@ -27,7 +28,7 @@ export default function LoginPage() {
   const [offlineMode, setOfflineMode] = useState(false);
 
 useEffect(() => {
-  const update = () => setOfflineMode(!navigator.onLine);
+  const update = () => setOfflineMode(!isAppOnline());
 
   update();
 

@@ -1,4 +1,5 @@
 "use client";
+import { isAppOnline } from "@/lib/connectivity";
 import React, { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
@@ -117,9 +118,9 @@ export default function TransactionsPage() {
   
   useEffect(() => {
     // Set initial status after component mounts
-    setOfflineMode(!navigator.onLine);
+    setOfflineMode(!isAppOnline());
   
-    const offline = () => setOfflineMode(true);
+    const offline = () => setOfflineMode(!isAppOnline());
     const online = () => setOfflineMode(false);
   
     window.addEventListener("offline", offline);
